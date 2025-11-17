@@ -21,7 +21,7 @@ export class Context {
   static addValue(key: string, value: any) {
     const contextObject = Context.getInstance().getStore() as Record<string, any>;
     if (!contextObject)
-      throw new Error('Nenhum contexto ativo encontrado. Use Context.getInstance().run().');
+      throw new Error('No active context found. Use Context.getInstance().run().');
 
     contextObject[key] = value;
     return contextObject;
@@ -30,7 +30,7 @@ export class Context {
   static addObjectValue(object: Record<string, any>) {
     const contextObject = Context.getInstance().getStore();
     if (!contextObject)
-      throw new Error('Nenhum contexto ativo encontrado. Use Context.getInstance().run().');
+      throw new Error('No active context found. Use Context.getInstance().run().');
 
     const merged = Object.assign(contextObject, object);
     return merged;
