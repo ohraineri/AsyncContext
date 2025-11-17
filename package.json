@@ -1,0 +1,23 @@
+{
+  "name": "@marceloraineri/async-context",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ohraineri/AsyncContext.git"
+  },
+  "author": "Marcelo Raineri",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ohraineri/AsyncContext/issues"
+  },
+  "homepage": "https://github.com/ohraineri/AsyncContext#readme",
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3"
+  }
+}
