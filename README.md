@@ -14,7 +14,7 @@ AsyncContext is a tiny utility library that standardizes how you propagate conte
 ## Installation
 
 ```bash
-npm i @marceloraineri/a@marceloraineri/async-context
+npm i @marceloraineri/async-context
 ```
 
 When developing locally inside this repo, import from the relative `core` entry point instead.
