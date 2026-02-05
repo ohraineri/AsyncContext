@@ -55,6 +55,24 @@ app.get("/ping", (_req, res) => {
 app.listen(3000, () => console.log("API listening on :3000"));
 ```
 
+## Nest middleware
+
+`AsyncContextNestMiddleware` reuses the Express middleware so you can enable async context in Nest (default Express adapter).
+
+```ts
+import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
+import { AsyncContextNestMiddleware } from "@marceloraineri/async-context";
+
+@Module({})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AsyncContextNestMiddleware).forRoutes("*");
+  }
+}
+```
+
+> Note: This middleware targets Nest's Express adapter. If you use the Fastify adapter, consider a custom interceptor that calls `Context.getInstance().run(...)` per request.
+
 ## API reference
 
 ### `Context.getInstance(): AsyncLocalStorage`
@@ -63,12 +81,15 @@ Returns (and lazily instantiates) the singleton `AsyncLocalStorage` used by the 
 ### `Context.addObjectValue(values: Record<string, unknown>): Record<string, unknown>`
 Merges the provided object into the active context. Also throws if no context is active.
 
-### `AAsyncContextExpresssMiddleware(req, res, next)`
+### `AsyncContextExpresssMiddleware(req, res, next)`
 Express middleware that:
 
 1. Generates a UUID via `crypto.randomUUID()`.
 2. Calls `Context.getInstance().run({ instance_id: uuid }, () => next())`.
 3. Makes the context (and `instance_id`) available to any downstream code.
+
+### `AsyncContextNestMiddleware`
+Nest middleware (Express adapter) that initializes a new async context per request by delegating to `AsyncContextExpresssMiddleware`.
 
 ## Best practices & caveats
 
