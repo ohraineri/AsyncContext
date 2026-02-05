@@ -73,6 +73,19 @@ export class AppModule implements NestModule {
 
 > Note: This middleware targets Nest's Express adapter. If you use the Fastify adapter, consider a custom interceptor that calls `Context.getInstance().run(...)` per request.
 
+## AdonisJS middleware
+
+`AsyncContextAdonisMiddleware` plugs into AdonisJS' middleware pipeline and initializes a new async context for each request.
+
+```ts
+// app/Http/Middleware/AsyncContext.ts
+import { AsyncContextAdonisMiddleware } from "@marceloraineri/async-context";
+
+export default AsyncContextAdonisMiddleware;
+```
+
+Register it as a global middleware in your AdonisJS kernel (per your Adonis version docs).
+
 ## API reference
 
 ### `Context.getInstance(): AsyncLocalStorage`
@@ -90,6 +103,9 @@ Express middleware that:
 
 ### `AsyncContextNestMiddleware`
 Nest middleware (Express adapter) that initializes a new async context per request by delegating to `AsyncContextExpresssMiddleware`.
+
+### `AsyncContextAdonisMiddleware`
+AdonisJS middleware that initializes a new async context per request using `Context.getInstance().run(...)`.
 
 ## Best practices & caveats
 
