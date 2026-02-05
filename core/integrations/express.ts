@@ -1,6 +1,6 @@
 import type * as http from "node:http";
 import crypto from "node:crypto";
-import { Context } from "../..";
+import { Context } from "../context";
 
 /**
  * Express middleware that initializes a new asynchronous context
