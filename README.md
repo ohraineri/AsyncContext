@@ -1,16 +1,16 @@
 # AsyncContext
 
-> Async context propagation and structured logging for Node.js, with first-class Express integration.
+> Async context propagation and structured logging for Node.js, with first-class framework integrations.
 
-AsyncContext is a focused library for carrying contextual data across asynchronous flows without threading parameters everywhere. It provides a `Context` wrapper around `AsyncLocalStorage`, middleware for popular frameworks, and a structured logger that automatically injects the active context into every log entry.
+AsyncContext helps you carry contextual data across asynchronous boundaries without passing parameters through every function. It provides a `Context` wrapper around `AsyncLocalStorage`, ready-made middleware for popular frameworks, and a structured logger that automatically includes the active context in every log entry.
 
-## Why AsyncContext?
+## Highlights
 
-- **Consistent per-request context** without passing parameters through every call.
-- **Simple, direct API** for reading/writing context anywhere in the async flow.
-- **Observability-ready** with correlation IDs, tenant/user data, and tracing metadata.
-- **Full-featured logger** with levels, redaction, sampling, timers, and transports.
-- **Zero runtime dependencies** and performance-focused design.
+- Consistent per-request context without parameter threading.
+- Simple, direct API for reading and writing context anywhere in the async flow.
+- Observability-ready with correlation IDs, tenant/user data, and tracing metadata.
+- Full-featured logger with levels, redaction, sampling, timers, and transports.
+- Zero runtime dependencies and performance-focused design.
 
 ## Installation
 
@@ -24,15 +24,13 @@ npm i @marceloraineri/async-context
 import crypto from "node:crypto";
 import { Context } from "@marceloraineri/async-context";
 
-const asyncLocal = Context.getInstance();
-
-await asyncLocal.run({ request_id: crypto.randomUUID() }, async () => {
+await Context.run({ requestId: crypto.randomUUID() }, async () => {
   Context.addValue("user", { id: 42, name: "Ada" });
 
   await Promise.resolve();
 
-  const store = asyncLocal.getStore();
-  console.log(store?.request_id); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
+  const store = Context.getStore();
+  console.log(store?.requestId); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
   console.log(store?.user); // { id: 42, name: "Ada" }
 });
 ```
@@ -83,9 +81,11 @@ const logger = createLogger({
 logger.info("structured log", { feature: "json" });
 ```
 
-## Express middleware
+## Framework integrations
 
-`AsyncContextExpresssMiddleware` (with three “s”) and `AsyncContextExpressMiddleware` (alias) create a new context per request and seed it with a unique `instance_id`.
+### Express
+
+`AsyncContextExpresssMiddleware` (with three "s") and `AsyncContextExpressMiddleware` (alias) create a new context per request and seed it with a unique `instance_id`.
 
 ```ts
 import express from "express";
@@ -95,7 +95,7 @@ const app = express();
 app.use(AsyncContextExpressMiddleware);
 
 app.get("/ping", (_req, res) => {
-  const store = Context.getInstance().getStore();
+  const store = Context.getStore();
   res.json({ instanceId: store?.instance_id ?? null });
 });
 
@@ -108,55 +108,68 @@ If you need a custom request id or seed data, use `createAsyncContextExpressMidd
 import express from "express";
 import { createAsyncContextExpressMiddleware, Context } from "@marceloraineri/async-context";
 
-initSentryWithAsyncContext({
-  sentryInit: {
-    dsn: process.env.SENTRY_DSN,
-    tracesSampleRate: 1.0,
-  },
-  redactKeys: ["async_context.token", "async_context.user.password"],
-});
-
 const app = express();
 
-app.use(AsyncContextExpresssMiddleware);
-app.use(sentryAsyncContextExpressMiddleware());
+app.use(
+  createAsyncContextExpressMiddleware({
+    idKey: "request_id",
+    seed: (req) => ({ method: req.method, path: req.url }),
+  })
+);
 
-app.get("/ping", (_req, res) => res.json({ ok: true }));
-
-app.use(sentryErrorHandler());
+app.get("/ping", (_req, res) => {
+  const store = Context.getStore();
+  res.json({ requestId: store?.request_id ?? null });
+});
 ```
 
-Notes:
+### Fastify
 
-- If `@sentry/node` is not installed, all Sentry helpers become safe no-ops.
-- The async context store is attached under the `async_context` extra by default (configurable via `extraName` or disabled with `attachStore: false`).
-- Default tags include `request_id` and `tenant_id` when present, plus optional `route`, `method`, and `url` in Express.
-- Use `redactKeys` to mask sensitive fields before they are sent.
-
-Common options:
-
-- `includeDefaults`: enable/disable default mappings (`request_id`, `tenant_id`, user fields).
-- `tagKeys`: map store keys to Sentry tags (`["customer_id"]` or `{ key, name }` objects).
-- `extraKeys`: map store keys to Sentry extras.
-- `user`: customize which store fields map to `id`, `username`, and `email`.
-- `attachStore`: attach the full store as an extra (default `true`).
-- `extraName`: name of the full-store extra (default `async_context`).
-- `redactKeys`: dot-paths to redact (`["async_context.token"]`).
-- `maxExtraSize`: byte limit for serialized extras (default 16 KB).
-
-Manual capture example:
+Use the onRequest hook or the convenience registration helper.
 
 ```ts
-import { captureExceptionWithContext } from "@marceloraineri/async-context";
+import fastify from "fastify";
+import { createAsyncContextFastifyHook, Context } from "@marceloraineri/async-context";
 
-try {
-  throw new Error("boom");
-} catch (error) {
-  await captureExceptionWithContext(error);
-}
+const app = fastify();
+app.addHook("onRequest", createAsyncContextFastifyHook());
+
+app.get("/ping", async () => {
+  const store = Context.getStore();
+  return { instanceId: store?.instance_id ?? null };
+});
 ```
 
-## NestJS
+### Koa
+
+```ts
+import Koa from "koa";
+import { createAsyncContextKoaMiddleware, Context } from "@marceloraineri/async-context";
+
+const app = new Koa();
+app.use(createAsyncContextKoaMiddleware());
+
+app.use(async (ctx) => {
+  const store = Context.getStore();
+  ctx.body = { instanceId: store?.instance_id ?? null };
+});
+```
+
+### Next.js API routes
+
+```ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import { createAsyncContextNextHandler, Context } from "@marceloraineri/async-context";
+
+export default createAsyncContextNextHandler(
+  async (_req: NextApiRequest, res: NextApiResponse) => {
+    const store = Context.getStore();
+    res.status(200).json({ instanceId: store?.instance_id ?? null });
+  }
+);
+```
+
+### NestJS
 
 `AsyncContextNestMiddleware` reuses the Express integration to enable async context in Nest (Express adapter).
 
@@ -172,7 +185,7 @@ export class AppModule implements NestModule {
 }
 ```
 
-## AdonisJS
+### AdonisJS
 
 `AsyncContextAdonisMiddleware` plugs into the AdonisJS pipeline and creates one context per request.
 
@@ -181,6 +194,36 @@ export class AppModule implements NestModule {
 import { AsyncContextAdonisMiddleware } from "@marceloraineri/async-context";
 
 export default AsyncContextAdonisMiddleware;
+```
+
+### Sentry (optional)
+
+AsyncContext can enrich Sentry events with the active store. If `@sentry/node` is not installed, the helpers safely no-op.
+
+```ts
+import express from "express";
+import {
+  AsyncContextExpressMiddleware,
+  initSentryWithAsyncContext,
+  sentryAsyncContextExpressMiddleware,
+  sentryErrorHandler,
+} from "@marceloraineri/async-context";
+
+initSentryWithAsyncContext({
+  sentryInit: {
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  },
+  redactKeys: ["async_context.token"],
+});
+
+const app = express();
+app.use(AsyncContextExpressMiddleware);
+app.use(sentryAsyncContextExpressMiddleware());
+
+app.get("/ping", (_req, res) => res.json({ ok: true }));
+
+app.use(sentryErrorHandler());
 ```
 
 ## API overview
@@ -194,10 +237,15 @@ export default AsyncContextAdonisMiddleware;
 - `createLogger(options)` and `new Logger(options)`
 - `Logger.child(bindings)` and `Logger.startTimer(level?)`
 - `createConsoleTransport(options)`
+- `createAsyncContextExpressMiddleware(options)`
+- `createAsyncContextFastifyHook(options)` and `registerAsyncContextFastify(app, options)`
+- `createAsyncContextKoaMiddleware(options)`
+- `createAsyncContextNextHandler(handler, options)`
+- `initSentryWithAsyncContext(options)` and `captureExceptionWithContext(error)`
 
 ## Best practices
 
-- Avoid replacing the entire store object; prefer `addValue`/`addObjectValue`.
+- Avoid replacing the entire store object; prefer `addValue` and `addObjectValue`.
 - Long-lived contexts can retain memory; always complete the flow (`next()` in middleware).
 - `AsyncLocalStorage` is per-process, so each worker maintains its own context.
 
