@@ -1,4 +1,4 @@
-import { AsyncContextExpresssMiddleware } from "./express";
+import { AsyncContextExpressMiddleware } from "./express";
 
 type NextFunction = () => void;
 
@@ -10,9 +10,9 @@ type NextFunction = () => void;
  */
 export class AsyncContextNestMiddleware {
   use(req: unknown, res: unknown, next: NextFunction) {
-    AsyncContextExpresssMiddleware(
-      req as Parameters<typeof AsyncContextExpresssMiddleware>[0],
-      res as Parameters<typeof AsyncContextExpresssMiddleware>[1],
+    AsyncContextExpressMiddleware(
+      req as Parameters<typeof AsyncContextExpressMiddleware>[0],
+      res as Parameters<typeof AsyncContextExpressMiddleware>[1],
       next
     );
   }
