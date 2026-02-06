@@ -55,6 +55,50 @@ app.get("/ping", (_req, res) => {
 app.listen(3000, () => console.log("API listening on :3000"));
 ```
 
+## Sentry integration (optional)
+
+This package does not ship with Sentry as a dependency. To enable the integration, install `@sentry/node` in your application:
+
+```bash
+npm i @sentry/node
+```
+
+Then wire the middleware in the recommended order (AsyncContext, Sentry scope, routes, Sentry error handler):
+
+```ts
+import express from "express";
+import {
+  AsyncContextExpresssMiddleware,
+  initSentryWithAsyncContext,
+  sentryAsyncContextExpressMiddleware,
+  sentryErrorHandler,
+} from "@marceloraineri/async-context";
+
+initSentryWithAsyncContext({
+  sentryInit: {
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  },
+  redactKeys: ["async_context.token", "async_context.user.password"],
+});
+
+const app = express();
+
+app.use(AsyncContextExpresssMiddleware);
+app.use(sentryAsyncContextExpressMiddleware());
+
+app.get("/ping", (_req, res) => res.json({ ok: true }));
+
+app.use(sentryErrorHandler());
+```
+
+Notes:
+
+- If `@sentry/node` is not installed, all Sentry helpers become safe no-ops.
+- The async context store is attached under the `async_context` extra by default (configurable via `extraName` or disabled with `attachStore: false`).
+- Default tags include `request_id` and `tenant_id` when present, plus optional `route`, `method`, and `url` in Express.
+- Use `redactKeys` to mask sensitive fields before they are sent.
+
 ## Nest middleware
 
 `AsyncContextNestMiddleware` reuses the Express middleware so you can enable async context in Nest (default Express adapter).
