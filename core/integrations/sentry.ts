@@ -264,11 +264,14 @@ function resolveUser(store: UnknownRecord, options: SentryUserMapping | undefine
       ? (userCandidate as UnknownRecord)
       : null;
 
-  const id =
-    (userObject ? pickFirstValue(userObject, idKeys) : undefined) ??
-    pickFirstValue(store, ["userId", "user_id"]);
-  const username = userObject ? pickFirstValue(userObject, usernameKeys) : undefined;
-  const email = userObject ? pickFirstValue(userObject, emailKeys) : undefined;
+  const rootId = pickFirstValue(store, options?.idKeys ?? ["userId", "user_id"]);
+  const id = (userObject ? pickFirstValue(userObject, idKeys) : undefined) ?? rootId;
+  const username = userObject
+    ? pickFirstValue(userObject, usernameKeys)
+    : pickFirstValue(store, usernameKeys);
+  const email = userObject
+    ? pickFirstValue(userObject, emailKeys)
+    : pickFirstValue(store, emailKeys);
 
   if (!id && !username && !email && userCandidate) {
     return { id: toTagValue(userCandidate) };
