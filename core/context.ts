@@ -1,5 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
+export type ContextStore = Record<string, any>;
+
 /**
  * Provides an application-wide asynchronous context using Node.js AsyncLocalStorage.
  * Allows storing and retrieving key/value data within the active async execution flow.
@@ -7,9 +9,9 @@ import { AsyncLocalStorage } from "node:async_hooks";
 export class Context {
   /**
    * Singleton instance of AsyncLocalStorage.
-   * @type {AsyncLocalStorage<unknown>}
+   * @type {AsyncLocalStorage<ContextStore>}
    */
-  public static asyncLocalStorageInstance: AsyncLocalStorage<unknown>;
+  public static asyncLocalStorageInstance: AsyncLocalStorage<ContextStore>;
 
   /**
    * Private constructor initializes the AsyncLocalStorage instance.
@@ -23,13 +25,138 @@ export class Context {
   /**
    * Returns the global AsyncLocalStorage instance, creating it if necessary.
    *
-   * @returns {AsyncLocalStorage<unknown>} The AsyncLocalStorage singleton.
+   * @returns {AsyncLocalStorage<ContextStore>} The AsyncLocalStorage singleton.
    */
-  static getInstance(): AsyncLocalStorage<unknown> {
+  static getInstance(): AsyncLocalStorage<ContextStore> {
     if (!Context.asyncLocalStorageInstance) {
       new Context();
     }
     return Context.asyncLocalStorageInstance;
+  }
+
+  /**
+   * Returns the current context store, if any.
+   */
+  static getStore<T extends ContextStore = ContextStore>(): T | undefined {
+    return Context.getInstance().getStore() as T | undefined;
+  }
+
+  /**
+   * Returns the current context store, throwing when none exists.
+   *
+   * @throws {Error} If called outside of an active context.
+   */
+  static requireStore<T extends ContextStore = ContextStore>(): T {
+    const contextObject = Context.getStore<T>();
+    if (!contextObject)
+      throw new Error(
+        "No active context found. Use Context.run(...) or the context middleware."
+      );
+    return contextObject;
+  }
+
+  /**
+   * Runs the provided callback inside a new async context.
+   */
+  static run<T>(callback: () => T): T;
+  static run<T>(initialStore: ContextStore, callback: () => T): T;
+  static run<T>(
+    initialStoreOrCallback: ContextStore | (() => T),
+    maybeCallback?: () => T
+  ): T {
+    const initialStore =
+      typeof initialStoreOrCallback === "function" ? {} : initialStoreOrCallback;
+    const callback =
+      typeof initialStoreOrCallback === "function"
+        ? initialStoreOrCallback
+        : maybeCallback;
+
+    if (!callback) {
+      throw new Error("Context.run requires a callback.");
+    }
+
+    return Context.getInstance().run(initialStore ?? {}, callback);
+  }
+
+  /**
+   * Runs the callback inside a new child context derived from the current store.
+   * Useful for creating a scoped overlay without mutating the parent store.
+   */
+  static runWith<T>(values: ContextStore, callback: () => T): T {
+    const parentStore = Context.getStore<ContextStore>();
+    const baseStore = parentStore ? { ...parentStore } : {};
+    return Context.getInstance().run({ ...baseStore, ...values }, callback);
+  }
+
+  /**
+   * Enters the given store for the current execution (advanced usage).
+   */
+  static enterWith(store: ContextStore): void {
+    Context.getInstance().enterWith(store);
+  }
+
+  /**
+   * Returns a shallow copy of the active store, or undefined when no context exists.
+   */
+  static snapshot<T extends ContextStore = ContextStore>(): T | undefined {
+    const contextObject = Context.getStore<T>();
+    if (!contextObject) return undefined;
+    return { ...contextObject };
+  }
+
+  /**
+   * Returns the value for a key in the active context.
+   */
+  static getValue<T = unknown>(key: string, defaultValue?: T): T | undefined {
+    const contextObject = Context.getStore();
+    if (!contextObject) return defaultValue;
+    if (Object.prototype.hasOwnProperty.call(contextObject, key)) {
+      return contextObject[key] as T;
+    }
+    return defaultValue;
+  }
+
+  /**
+   * Returns the value for a key, throwing if it does not exist.
+   */
+  static requireValue<T = unknown>(key: string): T {
+    const contextObject = Context.requireStore();
+    if (!Object.prototype.hasOwnProperty.call(contextObject, key)) {
+      throw new Error(`Context value "${key}" was not found.`);
+    }
+    return contextObject[key] as T;
+  }
+
+  /**
+   * Returns true when the active context has the given key.
+   */
+  static has(key: string): boolean {
+    const contextObject = Context.getStore();
+    return (
+      !!contextObject && Object.prototype.hasOwnProperty.call(contextObject, key)
+    );
+  }
+
+  /**
+   * Sets a value only when the key is currently missing.
+   */
+  static setDefault<T = unknown>(key: string, value: T): T {
+    const contextObject = Context.requireStore();
+    if (!Object.prototype.hasOwnProperty.call(contextObject, key)) {
+      contextObject[key] = value;
+    }
+    return contextObject[key] as T;
+  }
+
+  /**
+   * Clears all keys from the active context store.
+   */
+  static reset(): ContextStore {
+    const contextObject = Context.requireStore();
+    for (const key of Object.keys(contextObject)) {
+      delete contextObject[key];
+    }
+    return contextObject;
   }
 
   /**
@@ -39,18 +166,10 @@ export class Context {
    * @param {*} value - Value to associate with the given key.
    * @returns {Record<string, any>} The updated context object.
    *
-   * @throws {Error} If called outside of an active `Context.getInstance().run()`.
+   * @throws {Error} If called outside of an active `Context.run(...)`.
    */
-  static addValue(key: string, value: any): Record<string, any> {
-    const contextObject = Context.getInstance().getStore() as Record<
-      string,
-      any
-    >;
-    if (!contextObject)
-      throw new Error(
-        "No active context found. Use Context.getInstance().run() or use the context middleware."
-      );
-
+  static addValue(key: string, value: any): ContextStore {
+    const contextObject = Context.requireStore();
     contextObject[key] = value;
     return contextObject;
   }
@@ -61,43 +180,29 @@ export class Context {
    * @param {Record<string, any>} object - Object containing key/value pairs to merge.
    * @returns {Record<string, any>} The merged context object.
    *
-   * @throws {Error} If called outside of an active `Context.getInstance().run()`.
+   * @throws {Error} If called outside of an active `Context.run(...)`.
    */
-  static addObjectValue(object: Record<string, any>): Record<string, any> {
-    const contextObject = Context.getInstance().getStore();
-    if (!contextObject)
-      throw new Error(
-        "No active context found. Use Context.getInstance().run() or use the context middleware."
-      );
-
-    return Object.assign(contextObject, object);
+  static addObjectValue(object: Record<string, any>): ContextStore {
+    const contextObject = Context.requireStore();
+    return Object.assign(contextObject, object) as ContextStore;
   }
 
-  static remove(key: string) {
-    const contextObject = Context.getInstance().getStore() as Record<
-      string,
-      any
-    >;
-
-    if (contextObject[key]) delete contextObject[key];
-    if (!contextObject)
-      throw new Error(
-        "No active context found. Use Context.getInstance().run() or use the context middleware."
-      );
-
+  static remove(key: string): ContextStore {
+    const contextObject = Context.requireStore();
+    if (Object.prototype.hasOwnProperty.call(contextObject, key)) {
+      delete contextObject[key];
+    }
     return contextObject;
   }
 
-  static safeRemove(key: string) {
-    const contextObject = Context.getInstance().getStore() as Record<
-      string,
-      any
-    >;
-
-    if (!contextObject[key])
+  static safeRemove(key: string): ContextStore {
+    const contextObject = Context.requireStore();
+    if (!Object.prototype.hasOwnProperty.call(contextObject, key)) {
       throw new Error(
         "You are trying to remove something that does not exist."
       );
-    return Context.remove(key);
+    }
+    delete contextObject[key];
+    return contextObject;
   }
 }
