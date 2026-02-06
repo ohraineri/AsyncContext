@@ -189,6 +189,21 @@ Advanced usage helper to enter a store for the current execution.
 ### `Context.addObjectValue(values: Record<string, unknown>): Record<string, unknown>`
 Merges the provided object into the active context. Also throws if no context is active.
 
+### `createLogger(options)` / `new Logger(options)`
+Creates a structured logger. It supports log levels, context merging, redaction, sampling, timers, and transports.
+
+### `Logger.log(level, messageOrData?, dataOrError?, error?)`
+Writes a log entry at the chosen level. Accepts a message string or data object as the first argument.
+
+### `Logger.child(bindings)`
+Creates a child logger that automatically attaches the provided bindings to every log entry.
+
+### `Logger.startTimer(level?)`
+Starts a high-resolution timer and returns a function that logs duration when called.
+
+### `createConsoleTransport(options)`
+Console transport helper with JSON or pretty formatting and stderr routing for error levels.
+
 ### `AsyncContextExpresssMiddleware(req, res, next)`
 Express middleware that:
 
