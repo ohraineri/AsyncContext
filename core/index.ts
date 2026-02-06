@@ -42,6 +42,18 @@ export {
   type ConsoleTransportOptions,
   type SerializedError,
 } from "./logging/logger";
+export {
+  createLoggerFromEnv,
+  loggerPreset,
+  parseBooleanEnv,
+  parseCsvEnv,
+  parseLogFormatEnv,
+  parseLogLevelEnv,
+  parseLoggerPresetEnv,
+  parseNumberEnv,
+  type LoggerEnvOptions,
+  type LoggerPreset,
+} from "./config";
 
 export {
   bindAsyncContextToSentryScope,
