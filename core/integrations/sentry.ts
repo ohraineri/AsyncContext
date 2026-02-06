@@ -53,6 +53,8 @@ export type SentryAsyncContextOptions = {
   attachStore?: boolean;
   extraName?: string;
   redactKeys?: string[];
+  redactFieldNames?: string[];
+  redactDefaults?: boolean;
   maxExtraSize?: number;
   request?: RequestLike;
 };
@@ -65,6 +67,31 @@ const DEFAULT_EXTRA_NAME = "async_context";
 const DEFAULT_MAX_EXTRA_SIZE = 16 * 1024;
 const REDACTED_VALUE = "[REDACTED]";
 const TRUNCATED_SUFFIX = "...[truncated]";
+const DEFAULT_REDACT_FIELDS = [
+  "password",
+  "pass",
+  "pwd",
+  "secret",
+  "token",
+  "access_token",
+  "refresh_token",
+  "id_token",
+  "authorization",
+  "cookie",
+  "set_cookie",
+  "session",
+  "sessionid",
+  "api_key",
+  "apikey",
+  "x_api_key",
+  "client_secret",
+  "private_key",
+  "signature",
+  "jwt",
+  "bearer",
+  "csrf",
+  "xsrf",
+];
 
 let sentryCache: SentryLike | null | undefined;
 let sentryLoading: Promise<SentryLike | null> | null = null;
@@ -194,6 +221,60 @@ function normalizeRedactPath(path: string, extraName: string): string[] {
   if (parts[0] === extraName) parts.shift();
   if (parts[0] === DEFAULT_EXTRA_NAME) parts.shift();
   return parts;
+}
+
+function normalizeRedactionKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function buildRedactionKeySet(
+  fields: string[] | undefined,
+  includeDefaults: boolean
+): Set<string> {
+  const combined = [
+    ...(includeDefaults ? DEFAULT_REDACT_FIELDS : []),
+    ...(fields ?? []),
+  ];
+  const set = new Set<string>();
+  for (const entry of combined) {
+    const normalized = normalizeRedactionKey(entry);
+    if (normalized) set.add(normalized);
+  }
+  return set;
+}
+
+function applyKeyNameRedaction(
+  target: unknown,
+  keySet: Set<string>
+): unknown {
+  if (!keySet.size) return target;
+  if (!target || typeof target !== "object") return target;
+
+  const seen = new WeakSet<object>();
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    if (seen.has(node as object)) return;
+    seen.add(node as object);
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item);
+      }
+      return;
+    }
+
+    const record = node as UnknownRecord;
+    for (const [key, value] of Object.entries(record)) {
+      if (keySet.has(normalizeRedactionKey(key))) {
+        record[key] = REDACTED_VALUE;
+      } else if (value && typeof value === "object") {
+        visit(value);
+      }
+    }
+  };
+
+  visit(target);
+  return target;
 }
 
 function applyRedaction(target: unknown, paths: string[], extraName: string) {
@@ -346,11 +427,12 @@ function applyStoreToScope(
   if (options.attachStore !== false) {
     const extraName = options.extraName ?? DEFAULT_EXTRA_NAME;
     const cloned = cloneForExtra(store);
-    const redacted = applyRedaction(
-      cloned,
-      options.redactKeys ?? [],
-      extraName
+    const redacted = applyRedaction(cloned, options.redactKeys ?? [], extraName);
+    const redactionKeySet = buildRedactionKeySet(
+      options.redactFieldNames,
+      options.redactDefaults !== false
     );
+    applyKeyNameRedaction(redacted, redactionKeySet);
     setExtra(scope, extraName, redacted, maxExtraSize);
   }
 }
@@ -369,6 +451,8 @@ export async function initSentryWithAsyncContext(
     attachStore,
     extraName,
     redactKeys,
+    redactFieldNames,
+    redactDefaults,
     maxExtraSize,
     request,
     sentryInit,

@@ -32,6 +32,8 @@ export type LoggerOptions = {
   context?: boolean;
   contextKey?: string;
   contextKeys?: string[];
+  redactDefaults?: boolean;
+  redactFieldNames?: string[];
   redactKeys?: string[];
   redactPlaceholder?: string;
   timestamp?: boolean;
@@ -62,6 +64,31 @@ const LEVEL_VALUES: Record<LogLevel, number> = {
 };
 
 const DEFAULT_REDACT_PLACEHOLDER = "[REDACTED]";
+const DEFAULT_REDACT_FIELDS = [
+  "password",
+  "pass",
+  "pwd",
+  "secret",
+  "token",
+  "access_token",
+  "refresh_token",
+  "id_token",
+  "authorization",
+  "cookie",
+  "set_cookie",
+  "session",
+  "sessionid",
+  "api_key",
+  "apikey",
+  "x_api_key",
+  "client_secret",
+  "private_key",
+  "signature",
+  "jwt",
+  "bearer",
+  "csrf",
+  "xsrf",
+];
 
 const DEFAULT_STDERR_LEVELS: LogLevel[] = ["error", "fatal"];
 
@@ -165,6 +192,60 @@ function safeJsonStringify(value: unknown): string {
     }
     return item;
   });
+}
+
+function normalizeRedactionKey(key: string): string {
+  return key.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function buildRedactionKeySet(
+  fields: string[] | undefined,
+  includeDefaults: boolean
+): Set<string> {
+  const combined = [
+    ...(includeDefaults ? DEFAULT_REDACT_FIELDS : []),
+    ...(fields ?? []),
+  ];
+  const set = new Set<string>();
+  for (const entry of combined) {
+    const normalized = normalizeRedactionKey(entry);
+    if (normalized) set.add(normalized);
+  }
+  return set;
+}
+
+function applyKeyNameRedaction(
+  value: unknown,
+  keySet: Set<string>,
+  placeholder: string
+): void {
+  if (!keySet.size) return;
+  if (!value || typeof value !== "object") return;
+
+  const seen = new WeakSet<object>();
+  const visit = (node: unknown) => {
+    if (!node || typeof node !== "object") return;
+    if (seen.has(node as object)) return;
+    seen.add(node as object);
+
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        visit(item);
+      }
+      return;
+    }
+
+    const record = node as Record<string, unknown>;
+    for (const [key, item] of Object.entries(record)) {
+      if (keySet.has(normalizeRedactionKey(key))) {
+        record[key] = placeholder;
+      } else if (item && typeof item === "object") {
+        visit(item);
+      }
+    }
+  };
+
+  visit(value);
 }
 
 function applyRedaction(
@@ -374,6 +455,8 @@ export class Logger {
       | "context"
       | "contextKey"
       | "contextKeys"
+      | "redactDefaults"
+      | "redactFieldNames"
       | "redactKeys"
       | "redactPlaceholder"
       | "timestamp"
@@ -393,6 +476,8 @@ export class Logger {
       context: options.context ?? true,
       contextKey: options.contextKey ?? "context",
       contextKeys: options.contextKeys ?? [],
+      redactDefaults: options.redactDefaults ?? true,
+      redactFieldNames: options.redactFieldNames ?? [],
       redactKeys: options.redactKeys ?? [],
       redactPlaceholder: options.redactPlaceholder ?? DEFAULT_REDACT_PLACEHOLDER,
       timestamp: options.timestamp ?? true,
@@ -442,6 +527,8 @@ export class Logger {
       context: this.options.context,
       contextKey: this.options.contextKey,
       contextKeys: this.options.contextKeys,
+      redactDefaults: this.options.redactDefaults,
+      redactFieldNames: this.options.redactFieldNames,
       redactKeys: this.options.redactKeys,
       redactPlaceholder: this.options.redactPlaceholder,
       timestamp: this.options.timestamp,
@@ -514,6 +601,11 @@ export class Logger {
       }
     }
 
+    const redactionKeySet = buildRedactionKeySet(
+      this.options.redactFieldNames,
+      this.options.redactDefaults
+    );
+    applyKeyNameRedaction(entry, redactionKeySet, this.options.redactPlaceholder);
     applyRedaction(entry, this.options.redactKeys, this.options.redactPlaceholder);
 
     for (const transport of this.transports) {

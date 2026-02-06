@@ -154,6 +154,17 @@ export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
   const redactKeys = parseCsvEnv(pickEnv(env, ["LOG_REDACT_KEYS"]));
   if (redactKeys !== undefined) resolved.redactKeys = redactKeys;
 
+  const redactDefaults = parseBooleanEnv(
+    pickEnv(env, ["LOG_REDACT_DEFAULTS"])
+  );
+  if (redactDefaults !== undefined) resolved.redactDefaults = redactDefaults;
+
+  const redactFieldNames = parseCsvEnv(pickEnv(env, ["LOG_REDACT_FIELDS"]));
+  if (redactFieldNames !== undefined) resolved.redactFieldNames = redactFieldNames;
+
+  const redactPlaceholder = pickEnv(env, ["LOG_REDACT_PLACEHOLDER"]);
+  if (redactPlaceholder) resolved.redactPlaceholder = redactPlaceholder;
+
   const sampleRate = parseNumberEnv(pickEnv(env, ["LOG_SAMPLE_RATE"]));
   if (sampleRate !== undefined) {
     resolved.sampleRate = clamp(sampleRate, 0, 1);
