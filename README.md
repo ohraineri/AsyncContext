@@ -56,6 +56,8 @@ await Context.run({ requestId: crypto.randomUUID(), token: "secret" }, async () 
 });
 ```
 
+By default, common sensitive keys (for example `password`, `token`, `authorization`) are automatically redacted. You can disable this with `redactDefaults: false` or add extra key names with `redactFieldNames`.
+
 ### Timers and child loggers
 
 ```ts
@@ -107,6 +109,9 @@ Environment variables:
 | `LOG_CONTEXT_KEY` | Key name for context | `ctx` |
 | `LOG_CONTEXT_KEYS` | Comma-separated allowlist | `requestId,tenantId` |
 | `LOG_REDACT_KEYS` | Comma-separated redaction paths | `ctx.token,data.password` |
+| `LOG_REDACT_DEFAULTS` | Enable default sensitive-field redaction | `true` |
+| `LOG_REDACT_FIELDS` | Extra sensitive field names (comma-separated) | `accessToken,creditCard` |
+| `LOG_REDACT_PLACEHOLDER` | Mask value placeholder | `[REDACTED]` |
 | `LOG_SAMPLE_RATE` | 0..1 sampling | `0.25` |
 | `LOG_INCLUDE_PID` | Include process id | `true` |
 | `LOG_INCLUDE_HOSTNAME` | Include hostname | `false` |
@@ -231,6 +236,7 @@ export default AsyncContextAdonisMiddleware;
 ### Sentry (optional)
 
 AsyncContext can enrich Sentry events with the active store. If `@sentry/node` is not installed, the helpers safely no-op.
+Sensitive fields are redacted by default. Disable with `redactDefaults: false` or add `redactFieldNames`.
 
 ```ts
 import express from "express";
