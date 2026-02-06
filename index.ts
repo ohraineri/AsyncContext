@@ -9,6 +9,40 @@ export {
 export { AsyncContextNestMiddleware } from "./core/integrations/nest";
 export { AsyncContextAdonisMiddleware } from "./core/integrations/adonis";
 export {
+  createAsyncContextFastifyHook,
+  registerAsyncContextFastify,
+  type AsyncContextFastifyOptions,
+  type AsyncContextFastifySeed,
+  type FastifyHook,
+  type FastifyRequestLike,
+  type FastifyReplyLike,
+} from "./core/integrations/fastify";
+export {
+  createAsyncContextKoaMiddleware,
+  type AsyncContextKoaOptions,
+  type AsyncContextKoaSeed,
+  type KoaContextLike,
+  type KoaMiddleware,
+} from "./core/integrations/koa";
+export {
+  createAsyncContextNextHandler,
+  type AsyncContextNextOptions,
+  type AsyncContextNextSeed,
+  type NextApiHandler,
+} from "./core/integrations/next";
+export {
+  Logger,
+  createLogger,
+  createConsoleTransport,
+  type LogLevel,
+  type LogData,
+  type LogEntry,
+  type LoggerOptions,
+  type Transport,
+  type ConsoleTransportOptions,
+  type SerializedError,
+} from "./core/logging/logger";
+export {
   bindAsyncContextToSentryScope,
   captureExceptionWithContext,
   initSentryWithAsyncContext,
