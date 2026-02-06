@@ -80,6 +80,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
+  if (typeof value === "object" && value !== null) {
+    if (seen.has(value)) return "[Circular]";
+    seen.add(value);
+  }
+
   if (value instanceof Error) {
     return serializeError(value);
   }
@@ -113,8 +118,6 @@ function normalizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
   }
 
   if (typeof value === "object" && value !== null) {
-    if (seen.has(value)) return "[Circular]";
-    seen.add(value);
     const out: Record<string, unknown> = {};
     for (const [key, item] of Object.entries(value)) {
       out[key] = normalizeValue(item, seen);
