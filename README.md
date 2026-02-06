@@ -22,37 +22,65 @@ When developing locally inside this repo, import from the relative `core` entry 
 ## Quick start
 
 ```ts
+import crypto from "node:crypto";
 import { Context } from "@marceloraineri/async-context";
+
+await Context.run({ requestId: crypto.randomUUID() }, async () => {
   Context.addValue("user", { id: 42, name: "Ada" });
 
   await Promise.resolve();
 
-  const store = Context.getInstance().getStore();
-  console.log(store.requestId); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
-  console.log(store.user); // { id: 42, name: "Ada" }
+  const store = Context.getStore();
+  console.log(store?.requestId); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
+  console.log(store?.user); // { id: 42, name: "Ada" }
+});
 ```
 
 ## Express middleware
 
-`AsyncContextExpresssMiddleware` (note the triple “s”) creates a new context for every Express request, seeds it with a UUID `instance_id`, and ensures the context is available throughout the request lifecycle.
+`AsyncContextExpresssMiddleware` (note the triple “s”) and `AsyncContextExpressMiddleware` (alias) create a new context for every Express request, seed it with a UUID `instance_id`, and ensure the context is available throughout the request lifecycle.
 
 ```ts
 import express from "express";
 import {
-  AsyncContextExpresssMiddleware,
+  AsyncContextExpressMiddleware,
   Context,
 } from "@marceloraineri/async-context";
 
 const app = express();
 
-app.use(AsyncContextExpresssMiddleware);
+app.use(AsyncContextExpressMiddleware);
 
 app.get("/ping", (_req, res) => {
-  const store = Context.getInstance().getStore();
+  const store = Context.getStore();
   res.json({ instanceId: store?.instance_id ?? null });
 });
 
 app.listen(3000, () => console.log("API listening on :3000"));
+```
+
+If you need custom seed data or a different request-id key, use `createAsyncContextExpressMiddleware`.
+
+```ts
+import express from "express";
+import {
+  createAsyncContextExpressMiddleware,
+  Context,
+} from "@marceloraineri/async-context";
+
+const app = express();
+
+app.use(
+  createAsyncContextExpressMiddleware({
+    idKey: "request_id",
+    seed: (req) => ({ method: req.method, path: req.url }),
+  })
+);
+
+app.get("/ping", (_req, res) => {
+  const store = Context.getStore();
+  res.json({ requestId: store?.request_id ?? null });
+});
 ```
 
 ## Nest middleware
@@ -91,6 +119,27 @@ Register it as a global middleware in your AdonisJS kernel (per your Adonis vers
 ### `Context.getInstance(): AsyncLocalStorage`
 Returns (and lazily instantiates) the singleton `AsyncLocalStorage` used by the library. You typically call `run(store, callback)` on this instance to spawn a new context.
 
+### `Context.run(store, callback)` / `Context.run(callback)`
+Creates a new async context and executes the callback inside it. Returns the callback result (including a Promise when the callback is async).
+
+### `Context.runWith(values, callback)`
+Creates a child context by cloning the current store and merging the provided values without mutating the parent store.
+
+### `Context.getStore()` / `Context.requireStore()`
+Returns the active store (or throws when none is active).
+
+### `Context.getValue(key, defaultValue?)` / `Context.requireValue(key)`
+Fetches a key from the active store, with either a default or an error if missing.
+
+### `Context.has(key)` / `Context.setDefault(key, value)`
+Checks for a key or sets it only when it does not exist yet.
+
+### `Context.snapshot()` / `Context.reset()`
+Creates a shallow copy of the store or clears all keys from the active store.
+
+### `Context.enterWith(store)`
+Advanced usage helper to enter a store for the current execution.
+
 ### `Context.addObjectValue(values: Record<string, unknown>): Record<string, unknown>`
 Merges the provided object into the active context. Also throws if no context is active.
 
@@ -100,6 +149,12 @@ Express middleware that:
 1. Generates a UUID via `crypto.randomUUID()`.
 2. Calls `Context.getInstance().run({ instance_id: uuid }, () => next())`.
 3. Makes the context (and `instance_id`) available to any downstream code.
+
+### `AsyncContextExpressMiddleware`
+Alias of `AsyncContextExpresssMiddleware` with corrected spelling.
+
+### `createAsyncContextExpressMiddleware(options)`
+Factory for building customized Express middleware. Supports `idKey`, `idFactory`, and `seed` (object or function).
 
 ### `AsyncContextNestMiddleware`
 Nest middleware (Express adapter) that initializes a new async context per request by delegating to `AsyncContextExpresssMiddleware`.
