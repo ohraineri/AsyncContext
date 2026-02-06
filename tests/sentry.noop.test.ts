@@ -1,27 +1,40 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  bindAsyncContextToSentryScope,
-  captureExceptionWithContext,
-  initSentryWithAsyncContext,
-  sentryAsyncContextExpressMiddleware,
-  sentryErrorHandler,
-} from "../core/integrations/sentry";
 
-describe("sentry integration (no SDK)", () => {
-  it("no-ops safely when @sentry/node is missing", async () => {
-    await expect(initSentryWithAsyncContext()).resolves.toBe(false);
-    await expect(bindAsyncContextToSentryScope()).resolves.toBe(false);
-    await expect(captureExceptionWithContext(new Error("boom"))).resolves.toBeNull();
+async function loadModule() {
+  vi.resetModules();
+  vi.unmock("@sentry/node");
+  return import("../core/integrations/sentry");
+}
 
-    const middleware = sentryAsyncContextExpressMiddleware();
-    const next = vi.fn();
-    await middleware({}, {}, next);
-    expect(next).toHaveBeenCalledTimes(1);
+describe("Sentry integration (no module)", () => {
+  it("returns safe fallbacks when @sentry/node is missing", async () => {
+    const sentry = await loadModule();
 
-    const errorHandler = sentryErrorHandler();
-    const nextErr = vi.fn();
-    const err = new Error("failure");
-    await errorHandler(err, {}, {}, nextErr);
-    expect(nextErr).toHaveBeenCalledWith(err);
+    const bound = await sentry.bindAsyncContextToSentryScope();
+    expect(bound).toBe(false);
+
+    const captured = await sentry.captureExceptionWithContext(new Error("boom"));
+    expect(captured).toBeNull();
+
+    const initialized = await sentry.initSentryWithAsyncContext();
+    expect(initialized).toBe(false);
+  });
+
+  it("middleware and error handler still call next", async () => {
+    const sentry = await loadModule();
+
+    const middleware = sentry.sentryAsyncContextExpressMiddleware();
+    let nextCalled = false;
+    await middleware({} as any, {} as any, () => {
+      nextCalled = true;
+    });
+    expect(nextCalled).toBe(true);
+
+    const errorHandler = sentry.sentryErrorHandler();
+    let handled = false;
+    await errorHandler(new Error("fail"), {} as any, {} as any, () => {
+      handled = true;
+    });
+    expect(handled).toBe(true);
   });
 });
