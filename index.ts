@@ -43,6 +43,18 @@ export {
   type SerializedError,
 } from "./core/logging/logger";
 export {
+  createLoggerFromEnv,
+  loggerPreset,
+  parseBooleanEnv,
+  parseCsvEnv,
+  parseLogFormatEnv,
+  parseLogLevelEnv,
+  parseLoggerPresetEnv,
+  parseNumberEnv,
+  type LoggerEnvOptions,
+  type LoggerPreset,
+} from "./core/config";
+export {
   bindAsyncContextToSentryScope,
   captureExceptionWithContext,
   initSentryWithAsyncContext,
