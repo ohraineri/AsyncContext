@@ -9,14 +9,17 @@ export {
 export { AsyncContextNestMiddleware } from "./core/integrations/nest";
 export { AsyncContextAdonisMiddleware } from "./core/integrations/adonis";
 export {
-  Logger,
-  createLogger,
-  createConsoleTransport,
-  type LogLevel,
-  type LogData,
-  type LogEntry,
-  type LoggerOptions,
-  type Transport,
-  type ConsoleTransportOptions,
-  type SerializedError,
-} from "./core/logging/logger";
+  bindAsyncContextToSentryScope,
+  captureExceptionWithContext,
+  initSentryWithAsyncContext,
+  sentryAsyncContextExpressMiddleware,
+  sentryErrorHandler,
+} from "./core/integrations/sentry";
+export type {
+  InitSentryOptions,
+  SentryAsyncContextOptions,
+  SentryKeyMapping,
+  SentryLike,
+  SentryScopeLike,
+  SentryUserMapping,
+} from "./core/integrations/sentry";

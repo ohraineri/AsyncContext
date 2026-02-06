@@ -24,13 +24,15 @@ npm i @marceloraineri/async-context
 import crypto from "node:crypto";
 import { Context } from "@marceloraineri/async-context";
 
-await Context.run({ requestId: crypto.randomUUID() }, async () => {
+const asyncLocal = Context.getInstance();
+
+await asyncLocal.run({ request_id: crypto.randomUUID() }, async () => {
   Context.addValue("user", { id: 42, name: "Ada" });
 
   await Promise.resolve();
 
-  const store = Context.getStore();
-  console.log(store?.requestId); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
+  const store = asyncLocal.getStore();
+  console.log(store?.request_id); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
   console.log(store?.user); // { id: 42, name: "Ada" }
 });
 ```
@@ -93,7 +95,7 @@ const app = express();
 app.use(AsyncContextExpressMiddleware);
 
 app.get("/ping", (_req, res) => {
-  const store = Context.getStore();
+  const store = Context.getInstance().getStore();
   res.json({ instanceId: store?.instance_id ?? null });
 });
 
@@ -106,19 +108,52 @@ If you need a custom request id or seed data, use `createAsyncContextExpressMidd
 import express from "express";
 import { createAsyncContextExpressMiddleware, Context } from "@marceloraineri/async-context";
 
+initSentryWithAsyncContext({
+  sentryInit: {
+    dsn: process.env.SENTRY_DSN,
+    tracesSampleRate: 1.0,
+  },
+  redactKeys: ["async_context.token", "async_context.user.password"],
+});
+
 const app = express();
 
-app.use(
-  createAsyncContextExpressMiddleware({
-    idKey: "request_id",
-    seed: (req) => ({ method: req.method, path: req.url }),
-  })
-);
+app.use(AsyncContextExpresssMiddleware);
+app.use(sentryAsyncContextExpressMiddleware());
 
-app.get("/ping", (_req, res) => {
-  const store = Context.getStore();
-  res.json({ requestId: store?.request_id ?? null });
-});
+app.get("/ping", (_req, res) => res.json({ ok: true }));
+
+app.use(sentryErrorHandler());
+```
+
+Notes:
+
+- If `@sentry/node` is not installed, all Sentry helpers become safe no-ops.
+- The async context store is attached under the `async_context` extra by default (configurable via `extraName` or disabled with `attachStore: false`).
+- Default tags include `request_id` and `tenant_id` when present, plus optional `route`, `method`, and `url` in Express.
+- Use `redactKeys` to mask sensitive fields before they are sent.
+
+Common options:
+
+- `includeDefaults`: enable/disable default mappings (`request_id`, `tenant_id`, user fields).
+- `tagKeys`: map store keys to Sentry tags (`["customer_id"]` or `{ key, name }` objects).
+- `extraKeys`: map store keys to Sentry extras.
+- `user`: customize which store fields map to `id`, `username`, and `email`.
+- `attachStore`: attach the full store as an extra (default `true`).
+- `extraName`: name of the full-store extra (default `async_context`).
+- `redactKeys`: dot-paths to redact (`["async_context.token"]`).
+- `maxExtraSize`: byte limit for serialized extras (default 16 KB).
+
+Manual capture example:
+
+```ts
+import { captureExceptionWithContext } from "@marceloraineri/async-context";
+
+try {
+  throw new Error("boom");
+} catch (error) {
+  await captureExceptionWithContext(error);
+}
 ```
 
 ## NestJS

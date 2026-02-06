@@ -20,3 +20,12 @@ export {
   type ConsoleTransportOptions,
   type SerializedError,
 } from "./logging/logger";
+
+export type {
+  InitSentryOptions,
+  SentryAsyncContextOptions,
+  SentryKeyMapping,
+  SentryLike,
+  SentryScopeLike,
+  SentryUserMapping,
+} from './integrations/sentry';
