@@ -13,14 +13,20 @@ describe("Fastify integration", () => {
     const hook = createAsyncContextFastifyHook({
       idKey: "rid",
       idFactory: () => "fastify-1",
-      seed: { service: "fastify" },
+      seed: (req) => ({ service: "fastify", id: (req as { id?: string }).id }),
     });
 
-    hook({} as any, {} as any, () => {
+    hook({ id: "req-1" } as any, {} as any, () => {
       store = Context.getStore();
     });
 
-    expect(store).toEqual({ service: "fastify", rid: "fastify-1" });
+    expect(store).toEqual({ service: "fastify", id: "req-1", rid: "fastify-1" });
+  });
+
+  it("runs without a done callback", () => {
+    const hook = createAsyncContextFastifyHook({ idFactory: () => "fastify-2" });
+    hook({} as any, {} as any);
+    expect(Context.getStore()).toBeUndefined();
   });
 
   it("registers the hook on a fastify-like instance", () => {
@@ -46,7 +52,7 @@ describe("Koa integration", () => {
     let store: Record<string, unknown> | undefined;
     const middleware = createAsyncContextKoaMiddleware({
       idFactory: () => "koa-1",
-      seed: { source: "koa" },
+      seed: () => ({ source: "koa" }),
     });
 
     await middleware({} as any, async () => {

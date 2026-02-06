@@ -33,6 +33,12 @@ describe("Context", () => {
     expect(() => Context.requireStore()).toThrow("No active context found");
   });
 
+  it("returns undefined store outside a context", () => {
+    expect(Context.getStore()).toBeUndefined();
+    expect(Context.snapshot()).toBeUndefined();
+    expect(Context.has("missing")).toBe(false);
+  });
+
   it("addValue and addObjectValue mutate the store", () => {
     Context.run({ base: true }, () => {
       Context.addValue("user", { id: 1 });
@@ -70,6 +76,12 @@ describe("Context", () => {
       Context.setDefault("newKey", 42);
       expect(Context.getValue("existing")).toBe("value");
       expect(Context.getValue("newKey")).toBe(42);
+    });
+  });
+
+  it("does not apply default when key exists but is undefined", () => {
+    Context.run({ empty: undefined }, () => {
+      expect(Context.getValue("empty", "fallback")).toBeUndefined();
     });
   });
 

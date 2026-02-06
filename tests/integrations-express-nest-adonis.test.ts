@@ -40,6 +40,20 @@ describe("Express integration", () => {
 
     expect(store).toEqual({ role: "admin", request_id: "fixed" });
   });
+
+  it("supports seed factory functions", () => {
+    let store: Record<string, unknown> | undefined;
+    const middleware = createAsyncContextExpressMiddleware({
+      idFactory: () => "seeded",
+      seed: () => ({ method: "GET" }),
+    });
+
+    middleware(req as any, res as any, () => {
+      store = Context.getStore();
+    });
+
+    expect(store).toEqual({ method: "GET", instance_id: "seeded" });
+  });
 });
 
 describe("Nest integration", () => {

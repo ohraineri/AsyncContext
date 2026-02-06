@@ -205,6 +205,9 @@ describe("Logger", () => {
 
     expect(stream.chunks[0]).toContain("\"message\":\"hello\"");
     expect(prettyStream.chunks[0]).toContain("WARN");
+
+    const defaultTransport = createConsoleTransport({ format: "json", stderrLevels: ["info"] });
+    defaultTransport({ level: "info", levelValue: 30, message: "stderr" });
   });
 
   it("supports level filtering", () => {
