@@ -62,6 +62,7 @@ describe("config helpers", () => {
   it("creates logger from env", () => {
     const entries: LogEntry[] = [];
     const env = {
+      LOG_PRESET: "production",
       LOG_LEVEL: "debug",
       LOG_FORMAT: "json",
       LOG_COLORS: "false",
@@ -72,7 +73,7 @@ describe("config helpers", () => {
       LOG_REDACT_DEFAULTS: "false",
       LOG_REDACT_FIELDS: "creditCard",
       LOG_REDACT_PLACEHOLDER: "XXX",
-      LOG_SAMPLE_RATE: "1",
+      LOG_SAMPLE_RATE: "2",
       LOG_INCLUDE_PID: "false",
       LOG_INCLUDE_HOSTNAME: "true",
       LOG_TIMESTAMP: "true",
