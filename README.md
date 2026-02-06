@@ -36,6 +36,52 @@ await Context.run({ requestId: crypto.randomUUID() }, async () => {
 });
 ```
 
+## Logging
+
+AsyncContext now ships with a structured logger that automatically merges the active async context into every log entry. It supports levels, redaction, sampling, timers, transports, and JSON/pretty output.
+
+```ts
+import crypto from "node:crypto";
+import { Context, createLogger } from "@marceloraineri/async-context";
+
+const logger = createLogger({
+  name: "api",
+  level: "info",
+  contextKey: "ctx",
+  redactKeys: ["ctx.token", "data.password"],
+});
+
+await Context.run({ requestId: crypto.randomUUID(), token: "secret" }, async () => {
+  logger.info("request started", { route: "/ping" });
+});
+```
+
+### Timers and child loggers
+
+```ts
+import { createLogger } from "@marceloraineri/async-context";
+
+const logger = createLogger({ name: "jobs", level: "debug" });
+const jobLogger = logger.child({ job: "import-users" });
+
+const end = jobLogger.startTimer("debug");
+await Promise.resolve();
+end("job completed");
+```
+
+### JSON output or custom transports
+
+```ts
+import { createConsoleTransport, createLogger } from "@marceloraineri/async-context";
+
+const logger = createLogger({
+  level: "info",
+  transports: [createConsoleTransport({ format: "json" })],
+});
+
+logger.info("structured log", { feature: "json" });
+```
+
 ## Express middleware
 
 `AsyncContextExpresssMiddleware` (note the triple “s”) and `AsyncContextExpressMiddleware` (alias) create a new context for every Express request, seed it with a UUID `instance_id`, and ensure the context is available throughout the request lifecycle.
