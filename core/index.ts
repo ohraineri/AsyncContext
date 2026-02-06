@@ -1,14 +1,26 @@
-export { Context } from './context';
-export { AsyncContextExpresssMiddleware } from './integrations/express';
-export { AsyncContextNestMiddleware } from './integrations/nest';
-export { AsyncContextAdonisMiddleware } from './integrations/adonis';
+export { Context, type ContextStore } from "./context";
 export {
-  bindAsyncContextToSentryScope,
-  captureExceptionWithContext,
-  initSentryWithAsyncContext,
-  sentryAsyncContextExpressMiddleware,
-  sentryErrorHandler,
-} from './integrations/sentry';
+  AsyncContextExpresssMiddleware,
+  AsyncContextExpressMiddleware,
+  createAsyncContextExpressMiddleware,
+  type AsyncContextExpressOptions,
+  type AsyncContextExpressSeed,
+} from "./integrations/express";
+export { AsyncContextNestMiddleware } from "./integrations/nest";
+export { AsyncContextAdonisMiddleware } from "./integrations/adonis";
+export {
+  Logger,
+  createLogger,
+  createConsoleTransport,
+  type LogLevel,
+  type LogData,
+  type LogEntry,
+  type LoggerOptions,
+  type Transport,
+  type ConsoleTransportOptions,
+  type SerializedError,
+} from "./logging/logger";
+
 export type {
   InitSentryOptions,
   SentryAsyncContextOptions,
