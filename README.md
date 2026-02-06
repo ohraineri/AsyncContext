@@ -10,6 +10,7 @@ AsyncContext helps you carry contextual data across asynchronous boundaries with
 - Simple, direct API for reading and writing context anywhere in the async flow.
 - Observability-ready with correlation IDs, tenant/user data, and tracing metadata.
 - Full-featured logger with levels, redaction, sampling, timers, and transports.
+- DX-friendly configuration via presets and environment variables.
 - Zero runtime dependencies and performance-focused design.
 
 ## Installation
@@ -80,6 +81,37 @@ const logger = createLogger({
 
 logger.info("structured log", { feature: "json" });
 ```
+
+## DX and configuration
+
+Use presets or environment variables to configure logging without code changes.
+
+```ts
+import { createLoggerFromEnv, loggerPreset } from "@marceloraineri/async-context";
+
+const logger = createLoggerFromEnv({
+  name: "api",
+  defaults: loggerPreset("production"),
+});
+```
+
+Environment variables:
+
+| Variable | Description | Example |
+| --- | --- | --- |
+| `LOG_PRESET` | `development`, `production`, or `test` preset | `production` |
+| `LOG_LEVEL` | Minimum log level | `info` |
+| `LOG_FORMAT` | `json` or `pretty` | `json` |
+| `LOG_COLORS` | Enable ANSI colors | `true` |
+| `LOG_CONTEXT` | Attach async context | `true` |
+| `LOG_CONTEXT_KEY` | Key name for context | `ctx` |
+| `LOG_CONTEXT_KEYS` | Comma-separated allowlist | `requestId,tenantId` |
+| `LOG_REDACT_KEYS` | Comma-separated redaction paths | `ctx.token,data.password` |
+| `LOG_SAMPLE_RATE` | 0..1 sampling | `0.25` |
+| `LOG_INCLUDE_PID` | Include process id | `true` |
+| `LOG_INCLUDE_HOSTNAME` | Include hostname | `false` |
+| `LOG_TIMESTAMP` | Include timestamp | `true` |
+| `LOG_NAME` | Logger name | `api` |
 
 ## Framework integrations
 
@@ -237,6 +269,8 @@ app.use(sentryErrorHandler());
 - `createLogger(options)` and `new Logger(options)`
 - `Logger.child(bindings)` and `Logger.startTimer(level?)`
 - `createConsoleTransport(options)`
+- `createLoggerFromEnv(options)` and `loggerPreset(preset)`
+- `parseBooleanEnv(value)`, `parseNumberEnv(value)`, `parseCsvEnv(value)`, `parseLogLevelEnv(value)`, `parseLogFormatEnv(value)`, `parseLoggerPresetEnv(value)`
 - `createAsyncContextExpressMiddleware(options)`
 - `createAsyncContextFastifyHook(options)` and `registerAsyncContextFastify(app, options)`
 - `createAsyncContextKoaMiddleware(options)`
