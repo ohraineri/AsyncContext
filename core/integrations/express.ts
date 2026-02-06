@@ -1,6 +1,30 @@
 import type * as http from "node:http";
 import crypto from "node:crypto";
-import { Context } from "../context";
+import { Context, type ContextStore } from "../context";
+
+export type AsyncContextExpressSeed =
+  | ContextStore
+  | ((
+      req: http.IncomingMessage,
+      res: http.ServerResponse
+    ) => ContextStore);
+
+export type AsyncContextExpressOptions = {
+  /**
+   * Key used to store the request identifier.
+   * @default "instance_id"
+   */
+  idKey?: string;
+  /**
+   * Factory responsible for generating request identifiers.
+   * @default crypto.randomUUID
+   */
+  idFactory?: () => string;
+  /**
+   * Optional seed object (or factory) to merge into the store.
+   */
+  seed?: AsyncContextExpressSeed;
+};
 
 /**
  * Express middleware that initializes a new asynchronous context
@@ -31,8 +55,8 @@ import { Context } from "../context";
  * app.use(AsyncContextExpressMiddleware);
  *
  * app.get("/test", (req, res) => {
- *   const context = Context.getInstance().getStore();
- *   console.log(context.instance_id); // Unique per request
+ *   const context = Context.getStore();
+ *   console.log(context?.instance_id); // Unique per request
  *   res.send("OK");
  * });
  *
@@ -44,13 +68,35 @@ import { Context } from "../context";
  * share the same context object until the request completes.
  */
 
+export function createAsyncContextExpressMiddleware(
+  options: AsyncContextExpressOptions = {}
+) {
+  const { idKey = "instance_id", idFactory = () => crypto.randomUUID(), seed } =
+    options;
+
+  return function asyncContextExpressMiddleware(
+    req: http.IncomingMessage,
+    res: http.ServerResponse,
+    next: () => void
+  ) {
+    const seedValue = typeof seed === "function" ? seed(req, res) : seed;
+    const store: ContextStore = {
+      ...(seedValue ?? {}),
+      [idKey]: idFactory(),
+    };
+
+    Context.getInstance().run(store, () => next());
+  };
+}
+
+const defaultExpressMiddleware = createAsyncContextExpressMiddleware();
+
 export function AsyncContextExpresssMiddleware(
   req: http.IncomingMessage,
   res: http.ServerResponse,
   next: () => void
 ) {
-  const uuid = crypto.randomUUID();
-  const LocalStorageInstance = Context.getInstance();
-
-  LocalStorageInstance.run({ instance_id: uuid }, () => next());
+  return defaultExpressMiddleware(req, res, next);
 }
+
+export const AsyncContextExpressMiddleware = AsyncContextExpresssMiddleware;
