@@ -102,10 +102,26 @@ const COLORS: Record<LogLevel, string> = {
   fatal: "\x1b[35m",
 };
 
+/**
+ * Checks whether a value is a non-array object.
+ *
+ * @example
+ * ```ts
+ * const ok = isRecord({ a: 1 }); // true
+ * ```
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Normalizes values for safe logging (handles Error, bigint, Map, Set, cycles).
+ *
+ * @example
+ * ```ts
+ * const safe = normalizeValue(new Error("boom"));
+ * ```
+ */
 function normalizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
   if (typeof value === "object" && value !== null) {
     if (seen.has(value)) return "[Circular]";
@@ -155,6 +171,14 @@ function normalizeValue(value: unknown, seen = new WeakSet<object>()): unknown {
   return value;
 }
 
+/**
+ * Serializes errors into a structured format for log entries.
+ *
+ * @example
+ * ```ts
+ * const serialized = serializeError(new Error("boom"));
+ * ```
+ */
 function serializeError(error: unknown): SerializedError | undefined {
   if (!error) return undefined;
 
@@ -182,6 +206,14 @@ function serializeError(error: unknown): SerializedError | undefined {
   };
 }
 
+/**
+ * Safe JSON stringify that handles cycles and bigint values.
+ *
+ * @example
+ * ```ts
+ * const json = safeJsonStringify({ ok: true });
+ * ```
+ */
 function safeJsonStringify(value: unknown): string {
   const seen = new WeakSet<object>();
   return JSON.stringify(value, (_key, item) => {
@@ -194,10 +226,26 @@ function safeJsonStringify(value: unknown): string {
   });
 }
 
+/**
+ * Normalizes a key for redaction comparison.
+ *
+ * @example
+ * ```ts
+ * normalizeRedactionKey("Authorization"); // "authorization"
+ * ```
+ */
 function normalizeRedactionKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * Builds a set of normalized keys for field-name redaction.
+ *
+ * @example
+ * ```ts
+ * const keys = buildRedactionKeySet(["token"], true);
+ * ```
+ */
 function buildRedactionKeySet(
   fields: string[] | undefined,
   includeDefaults: boolean
@@ -214,6 +262,14 @@ function buildRedactionKeySet(
   return set;
 }
 
+/**
+ * Redacts values by matching key names across an object graph.
+ *
+ * @example
+ * ```ts
+ * applyKeyNameRedaction(entry, new Set(["password"]), "[REDACTED]");
+ * ```
+ */
 function applyKeyNameRedaction(
   value: unknown,
   keySet: Set<string>,
@@ -248,6 +304,14 @@ function applyKeyNameRedaction(
   visit(value);
 }
 
+/**
+ * Redacts values using explicit dot-paths.
+ *
+ * @example
+ * ```ts
+ * applyRedaction(entry, ["data.token"], "[REDACTED]");
+ * ```
+ */
 function applyRedaction(
   value: unknown,
   paths: string[] | undefined,
@@ -263,6 +327,14 @@ function applyRedaction(
   }
 }
 
+/**
+ * Redacts a specific path inside a record or array.
+ *
+ * @example
+ * ```ts
+ * redactPath(entry, ["data", "token"], "[REDACTED]");
+ * ```
+ */
 function redactPath(
   target: Record<string, unknown> | unknown[],
   parts: string[],
@@ -326,6 +398,14 @@ function redactPath(
   }
 }
 
+/**
+ * Picks a subset of context keys from the store.
+ *
+ * @example
+ * ```ts
+ * const ctx = pickContext(store, ["requestId"]);
+ * ```
+ */
 function pickContext(
   store: ContextStore,
   keys: string[] | undefined
@@ -344,6 +424,14 @@ function pickContext(
   return picked;
 }
 
+/**
+ * Formats a log entry into a human-readable string.
+ *
+ * @example
+ * ```ts
+ * const line = formatPretty(entry, true);
+ * ```
+ */
 function formatPretty(entry: LogEntry, useColors: boolean): string {
   const timestamp = entry.timestamp ? `${entry.timestamp} ` : "";
   const level = entry.level.toUpperCase();
@@ -365,6 +453,14 @@ function formatPretty(entry: LogEntry, useColors: boolean): string {
   return `${timestamp}${levelLabel}${name}${message}${metaString}`.trimEnd();
 }
 
+/**
+ * Normalizes arbitrary data into a structured log payload.
+ *
+ * @example
+ * ```ts
+ * const data = normalizeData({ ok: true });
+ * ```
+ */
 function normalizeData(value: unknown): LogData | undefined {
   if (value === undefined) return undefined;
   if (isRecord(value)) return normalizeValue(value) as LogData;
@@ -373,6 +469,14 @@ function normalizeData(value: unknown): LogData | undefined {
   return { value: normalizeValue(value) } as LogData;
 }
 
+/**
+ * Extracts message, data, and error from logger arguments.
+ *
+ * @example
+ * ```ts
+ * const parts = extractParts(["hello", { ok: true }]);
+ * ```
+ */
 function extractParts(args: unknown[]): {
   message?: string;
   data?: LogData;
@@ -424,6 +528,14 @@ function extractParts(args: unknown[]): {
   };
 }
 
+/**
+ * Creates a console transport that writes JSON or pretty logs.
+ *
+ * @example
+ * ```ts
+ * const transport = createConsoleTransport({ format: "json" });
+ * ```
+ */
 export function createConsoleTransport(
   options: ConsoleTransportOptions = {}
 ): Transport {
@@ -445,6 +557,15 @@ export function createConsoleTransport(
   };
 }
 
+/**
+ * Structured logger with context attachment, redaction, sampling, and transports.
+ *
+ * @example
+ * ```ts
+ * const logger = new Logger({ name: "api" });
+ * logger.info("started");
+ * ```
+ */
 export class Logger {
   private level: LogLevel;
   private readonly name?: string;
@@ -468,6 +589,14 @@ export class Logger {
   >;
   private readonly transports: Transport[];
 
+  /**
+   * Creates a new logger instance.
+   *
+   * @example
+   * ```ts
+   * const logger = new Logger({ level: "debug" });
+   * ```
+   */
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? "info";
     this.name = options.name;
@@ -502,18 +631,50 @@ export class Logger {
     }
   }
 
+  /**
+   * Updates the minimum log level.
+   *
+   * @example
+   * ```ts
+   * logger.setLevel("warn");
+   * ```
+   */
   setLevel(level: LogLevel) {
     this.level = level;
   }
 
+  /**
+   * Returns the current minimum log level.
+   *
+   * @example
+   * ```ts
+   * const level = logger.getLevel();
+   * ```
+   */
   getLevel(): LogLevel {
     return this.level;
   }
 
+  /**
+   * Checks whether a given level is enabled.
+   *
+   * @example
+   * ```ts
+   * if (logger.isLevelEnabled("debug")) { /* ... */ }
+   * ```
+   */
   isLevelEnabled(level: LogLevel): boolean {
     return LEVEL_VALUES[level] >= LEVEL_VALUES[this.level];
   }
 
+  /**
+   * Creates a child logger with additional bindings.
+   *
+   * @example
+   * ```ts
+   * const child = logger.child({ job: "import" });
+   * ```
+   */
   child(bindings: LogData): Logger {
     const merged = {
       ...this.bindings,
@@ -540,10 +701,28 @@ export class Logger {
     });
   }
 
+  /**
+   * Runs a callback with a child logger.
+   *
+   * @example
+   * ```ts
+   * logger.withBindings({ requestId: "req_1" }, (child) => child.info("ok"));
+   * ```
+   */
   withBindings<T>(bindings: LogData, callback: (logger: Logger) => T): T {
     return callback(this.child(bindings));
   }
 
+  /**
+   * Starts a timer and returns a function that logs the duration.
+   *
+   * @example
+   * ```ts
+   * const end = logger.startTimer("debug");
+   * // ...work...
+   * end("done");
+   * ```
+   */
   startTimer(level: LogLevel = "info") {
     const start = getHighResolutionTimeMs();
     return (message = "operation completed", data?: LogData) => {
@@ -552,6 +731,14 @@ export class Logger {
     };
   }
 
+  /**
+   * Logs a message at the provided level.
+   *
+   * @example
+   * ```ts
+   * logger.log("info", "user created", { id: 1 });
+   * ```
+   */
   log(level: LogLevel, ...args: unknown[]) {
     if (!this.isLevelEnabled(level)) return;
     if (this.options.sampleRate < 1 && Math.random() > this.options.sampleRate) {
@@ -613,35 +800,99 @@ export class Logger {
     }
   }
 
+  /**
+   * Logs a trace message.
+   *
+   * @example
+   * ```ts
+   * logger.trace("trace message");
+   * ```
+   */
   trace(...args: unknown[]) {
     this.log("trace", ...args);
   }
 
+  /**
+   * Logs a debug message.
+   *
+   * @example
+   * ```ts
+   * logger.debug("debug message");
+   * ```
+   */
   debug(...args: unknown[]) {
     this.log("debug", ...args);
   }
 
+  /**
+   * Logs an info message.
+   *
+   * @example
+   * ```ts
+   * logger.info("info message");
+   * ```
+   */
   info(...args: unknown[]) {
     this.log("info", ...args);
   }
 
+  /**
+   * Logs a warning message.
+   *
+   * @example
+   * ```ts
+   * logger.warn("warn message");
+   * ```
+   */
   warn(...args: unknown[]) {
     this.log("warn", ...args);
   }
 
+  /**
+   * Logs an error message.
+   *
+   * @example
+   * ```ts
+   * logger.error(new Error("boom"));
+   * ```
+   */
   error(...args: unknown[]) {
     this.log("error", ...args);
   }
 
+  /**
+   * Logs a fatal message.
+   *
+   * @example
+   * ```ts
+   * logger.fatal("fatal message");
+   * ```
+   */
   fatal(...args: unknown[]) {
     this.log("fatal", ...args);
   }
 }
 
+/**
+ * Convenience factory for creating a `Logger`.
+ *
+ * @example
+ * ```ts
+ * const logger = createLogger({ name: "api" });
+ * ```
+ */
 export function createLogger(options: LoggerOptions = {}): Logger {
   return new Logger(options);
 }
 
+/**
+ * Returns a high-resolution timestamp in milliseconds.
+ *
+ * @example
+ * ```ts
+ * const start = getHighResolutionTimeMs();
+ * ```
+ */
 function getHighResolutionTimeMs(): number {
   if (typeof process.hrtime?.bigint === "function") {
     return Number(process.hrtime.bigint()) / 1_000_000;

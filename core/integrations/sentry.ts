@@ -96,6 +96,14 @@ const DEFAULT_REDACT_FIELDS = [
 let sentryCache: SentryLike | null | undefined;
 let sentryLoading: Promise<SentryLike | null> | null = null;
 
+/**
+ * Lazily imports `@sentry/node` and caches the resolved module.
+ *
+ * @example
+ * ```ts
+ * const sentry = await getSentry();
+ * ```
+ */
 async function getSentry(): Promise<SentryLike | null> {
   if (sentryCache !== undefined) return sentryCache;
   if (sentryLoading) return sentryLoading;
@@ -116,6 +124,14 @@ async function getSentry(): Promise<SentryLike | null> {
   return sentryCache;
 }
 
+/**
+ * Detects whether an error represents a missing Sentry module.
+ *
+ * @example
+ * ```ts
+ * if (isModuleNotFound(error)) return null;
+ * ```
+ */
 function isModuleNotFound(error: unknown) {
   if (!error || typeof error !== "object") return false;
   const code = (error as { code?: string }).code;
@@ -129,12 +145,28 @@ function isModuleNotFound(error: unknown) {
   ) && message.includes("@sentry/node");
 }
 
+/**
+ * Returns the current async context store as a plain object.
+ *
+ * @example
+ * ```ts
+ * const store = getActiveStore();
+ * ```
+ */
 function getActiveStore(): UnknownRecord | null {
   const store = Context.getInstance().getStore();
   if (!store || typeof store !== "object") return null;
   return store as UnknownRecord;
 }
 
+/**
+ * Picks the first value from the store that matches the provided keys.
+ *
+ * @example
+ * ```ts
+ * const requestId = pickFirstValue(store, ["requestId", "request_id"]);
+ * ```
+ */
 function pickFirstValue(store: UnknownRecord, keys: string[]): unknown {
   for (const key of keys) {
     if (key in store) return store[key];
@@ -142,6 +174,14 @@ function pickFirstValue(store: UnknownRecord, keys: string[]): unknown {
   return undefined;
 }
 
+/**
+ * Normalizes a value into a string suitable for Sentry tags.
+ *
+ * @example
+ * ```ts
+ * const tag = toTagValue(123); // "123"
+ * ```
+ */
 function toTagValue(value: unknown): string | undefined {
   if (value === null || value === undefined) return undefined;
   if (typeof value === "string") return value;
@@ -155,6 +195,14 @@ function toTagValue(value: unknown): string | undefined {
   }
 }
 
+/**
+ * Applies a tag to a Sentry scope, if supported.
+ *
+ * @example
+ * ```ts
+ * setTag(scope, "tenant_id", "t_123");
+ * ```
+ */
 function setTag(scope: SentryScopeLike, key: string, value: unknown) {
   if (!scope.setTag) return;
   const stringValue = toTagValue(value);
@@ -162,6 +210,14 @@ function setTag(scope: SentryScopeLike, key: string, value: unknown) {
   scope.setTag(key, truncateString(stringValue, 256));
 }
 
+/**
+ * Applies an extra field to a Sentry scope, respecting size limits.
+ *
+ * @example
+ * ```ts
+ * setExtra(scope, "request_id", "req_123", 4096);
+ * ```
+ */
 function setExtra(
   scope: SentryScopeLike,
   key: string,
@@ -172,6 +228,14 @@ function setExtra(
   scope.setExtra(key, limitSize(value, maxSize));
 }
 
+/**
+ * Checks whether a value is a plain object.
+ *
+ * @example
+ * ```ts
+ * if (isPlainObject(value)) { /* ... */ }
+ * ```
+ */
 function isPlainObject(value: unknown): value is UnknownRecord {
   if (!value || typeof value !== "object") return false;
   if (Array.isArray(value)) return false;
@@ -179,6 +243,14 @@ function isPlainObject(value: unknown): value is UnknownRecord {
   return proto === Object.prototype || proto === null;
 }
 
+/**
+ * Clones a value to a Sentry-safe structure for `extra`.
+ *
+ * @example
+ * ```ts
+ * const safe = cloneForExtra(store);
+ * ```
+ */
 function cloneForExtra(
   value: unknown,
   depth = 0,
@@ -216,6 +288,14 @@ function cloneForExtra(
   return clone;
 }
 
+/**
+ * Normalizes a redaction path relative to a Sentry extra root name.
+ *
+ * @example
+ * ```ts
+ * normalizeRedactPath("async_context.token", "async_context");
+ * ```
+ */
 function normalizeRedactPath(path: string, extraName: string): string[] {
   const parts = path.split(".").filter(Boolean);
   if (parts[0] === extraName) parts.shift();
@@ -223,10 +303,26 @@ function normalizeRedactPath(path: string, extraName: string): string[] {
   return parts;
 }
 
+/**
+ * Normalizes a key for redaction comparison.
+ *
+ * @example
+ * ```ts
+ * normalizeRedactionKey("Authorization"); // "authorization"
+ * ```
+ */
 function normalizeRedactionKey(key: string): string {
   return key.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * Builds a set of normalized keys for field-name redaction.
+ *
+ * @example
+ * ```ts
+ * const keys = buildRedactionKeySet(["token"], true);
+ * ```
+ */
 function buildRedactionKeySet(
   fields: string[] | undefined,
   includeDefaults: boolean
@@ -243,6 +339,14 @@ function buildRedactionKeySet(
   return set;
 }
 
+/**
+ * Redacts values by matching key names across an object graph.
+ *
+ * @example
+ * ```ts
+ * applyKeyNameRedaction(payload, new Set(["password"]));
+ * ```
+ */
 function applyKeyNameRedaction(
   target: unknown,
   keySet: Set<string>
@@ -277,6 +381,14 @@ function applyKeyNameRedaction(
   return target;
 }
 
+/**
+ * Redacts values using explicit dot-paths.
+ *
+ * @example
+ * ```ts
+ * applyRedaction(payload, ["user.token"], "async_context");
+ * ```
+ */
 function applyRedaction(target: unknown, paths: string[], extraName: string) {
   if (!paths.length) return target;
   if (!target || typeof target !== "object") return target;
@@ -290,6 +402,14 @@ function applyRedaction(target: unknown, paths: string[], extraName: string) {
   return target;
 }
 
+/**
+ * Redacts a specific path inside a record.
+ *
+ * @example
+ * ```ts
+ * redactPath(record, ["user", "token"]);
+ * ```
+ */
 function redactPath(target: UnknownRecord, parts: string[]) {
   if (!target || typeof target !== "object") return;
   const [head, ...rest] = parts;
@@ -304,6 +424,14 @@ function redactPath(target: UnknownRecord, parts: string[]) {
   }
 }
 
+/**
+ * Ensures values fit within a byte-size budget for Sentry extras.
+ *
+ * @example
+ * ```ts
+ * const safe = limitSize(store, 4096);
+ * ```
+ */
 function limitSize(value: unknown, maxSize: number): unknown {
   const safeMax = maxSize > 0 ? maxSize : DEFAULT_MAX_EXTRA_SIZE;
   const serialized = safeSerialize(value);
@@ -311,6 +439,14 @@ function limitSize(value: unknown, maxSize: number): unknown {
   return truncateString(serialized, safeMax, true);
 }
 
+/**
+ * Safely serializes a value to JSON, falling back to `String`.
+ *
+ * @example
+ * ```ts
+ * const serialized = safeSerialize({ ok: true });
+ * ```
+ */
 function safeSerialize(value: unknown): string {
   if (typeof value === "string") return value;
   try {
@@ -320,6 +456,14 @@ function safeSerialize(value: unknown): string {
   }
 }
 
+/**
+ * Truncates strings to a maximum size and optionally appends a suffix.
+ *
+ * @example
+ * ```ts
+ * truncateString("hello", 3); // "hel"
+ * ```
+ */
 function truncateString(value: string, maxSize: number, addSuffix = false): string {
   if (value.length <= maxSize) return value;
   const suffix = addSuffix ? TRUNCATED_SUFFIX : "";
@@ -327,11 +471,27 @@ function truncateString(value: string, maxSize: number, addSuffix = false): stri
   return `${value.slice(0, available)}${suffix}`;
 }
 
+/**
+ * Normalizes a key mapping to `{ key, name }`.
+ *
+ * @example
+ * ```ts
+ * normalizeKeyMapping("tenantId"); // { key: "tenantId", name: "tenantId" }
+ * ```
+ */
 function normalizeKeyMapping(mapping: SentryKeyMapping): { key: string; name: string } {
   if (typeof mapping === "string") return { key: mapping, name: mapping };
   return { key: mapping.key, name: mapping.name ?? mapping.key };
 }
 
+/**
+ * Resolves a user object for Sentry from the async context store.
+ *
+ * @example
+ * ```ts
+ * const user = resolveUser(store, { idKeys: ["userId"] });
+ * ```
+ */
 function resolveUser(store: UnknownRecord, options: SentryUserMapping | undefined) {
   const objectKeys = options?.objectKeys ?? ["user"];
   const userCandidate = pickFirstValue(store, objectKeys);
@@ -371,6 +531,14 @@ function resolveUser(store: UnknownRecord, options: SentryUserMapping | undefine
   };
 }
 
+/**
+ * Applies request-related tags to a Sentry scope.
+ *
+ * @example
+ * ```ts
+ * applyRequestTags(scope, { method: "GET", url: "/health" });
+ * ```
+ */
 function applyRequestTags(scope: SentryScopeLike, request?: RequestLike) {
   if (!request) return;
   if (request.method) setTag(scope, "method", request.method);
@@ -380,6 +548,14 @@ function applyRequestTags(scope: SentryScopeLike, request?: RequestLike) {
   if (route) setTag(scope, "route", route);
 }
 
+/**
+ * Applies async context store data to a Sentry scope.
+ *
+ * @example
+ * ```ts
+ * applyStoreToScope(scope, store, { includeDefaults: true });
+ * ```
+ */
 function applyStoreToScope(
   scope: SentryScopeLike,
   store: UnknownRecord | null,
@@ -437,6 +613,16 @@ function applyStoreToScope(
   }
 }
 
+/**
+ * Initializes Sentry and binds the current async context to the scope.
+ *
+ * @example
+ * ```ts
+ * await initSentryWithAsyncContext({
+ *   sentryInit: { dsn: process.env.SENTRY_DSN },
+ * });
+ * ```
+ */
 export async function initSentryWithAsyncContext(
   options: InitSentryOptions = {}
 ): Promise<boolean> {
@@ -475,6 +661,14 @@ export async function initSentryWithAsyncContext(
   return true;
 }
 
+/**
+ * Binds the current async context store to the Sentry scope.
+ *
+ * @example
+ * ```ts
+ * await bindAsyncContextToSentryScope({ tagKeys: ["tenantId"] });
+ * ```
+ */
 export async function bindAsyncContextToSentryScope(
   options: SentryAsyncContextOptions = {}
 ): Promise<boolean> {
@@ -499,6 +693,14 @@ export async function bindAsyncContextToSentryScope(
   return false;
 }
 
+/**
+ * Captures an exception in Sentry, enriching the event with async context.
+ *
+ * @example
+ * ```ts
+ * await captureExceptionWithContext(error);
+ * ```
+ */
 export async function captureExceptionWithContext(
   error: unknown,
   options: SentryAsyncContextOptions = {}
@@ -525,6 +727,14 @@ export async function captureExceptionWithContext(
   return sentry.captureException(error) ?? null;
 }
 
+/**
+ * Express middleware that binds async context data to each Sentry scope.
+ *
+ * @example
+ * ```ts
+ * app.use(sentryAsyncContextExpressMiddleware());
+ * ```
+ */
 export function sentryAsyncContextExpressMiddleware(
   options: SentryAsyncContextOptions = {}
 ): ExpressMiddleware {
@@ -543,6 +753,14 @@ export function sentryAsyncContextExpressMiddleware(
   };
 }
 
+/**
+ * Express error handler that captures exceptions with async context.
+ *
+ * @example
+ * ```ts
+ * app.use(sentryErrorHandler());
+ * ```
+ */
 export function sentryErrorHandler(
   options: SentryAsyncContextOptions = {}
 ): ExpressErrorHandler {

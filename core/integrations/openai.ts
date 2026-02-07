@@ -73,6 +73,18 @@ const DEFAULT_RESPONSE_KEYS = [
   "service_tier",
 ];
 
+/**
+ * Wraps an OpenAI call, recording metadata into the current async context.
+ *
+ * @example
+ * ```ts
+ * const response = await withOpenAIContext(
+ *   "responses.create",
+ *   { model: "gpt-4o", input: "Hello" },
+ *   (req) => openai.responses.create(req)
+ * );
+ * ```
+ */
 export async function withOpenAIContext<
   TRequest extends UnknownRecord,
   TResponse
@@ -101,6 +113,18 @@ export async function withOpenAIContext<
   }
 }
 
+/**
+ * Records an OpenAI call summary in the current context.
+ *
+ * @example
+ * ```ts
+ * recordOpenAICall({
+ *   provider: "openai",
+ *   operation: "responses.create",
+ *   durationMs: 12,
+ * });
+ * ```
+ */
 export function recordOpenAICall(
   summary: OpenAICallContext,
   options: OpenAIContextOptions = {}
@@ -130,6 +154,14 @@ export function recordOpenAICall(
   store[key] = [existing, summary];
 }
 
+/**
+ * Builds a normalized call summary from request/response/error data.
+ *
+ * @example
+ * ```ts
+ * const summary = buildCallSummary({ operation: "responses.create", request: {}, durationMs: 5, options: {} });
+ * ```
+ */
 function buildCallSummary({
   operation,
   request,
@@ -180,12 +212,28 @@ function buildCallSummary({
   return summary;
 }
 
+/**
+ * Extracts a request id from OpenAI responses.
+ *
+ * @example
+ * ```ts
+ * const requestId = extractRequestId({ _request_id: "req_123" });
+ * ```
+ */
 function extractRequestId(response: unknown): string | undefined {
   if (!isRecord(response)) return undefined;
   const requestId = response._request_id ?? response.request_id;
   return typeof requestId === "string" ? requestId : undefined;
 }
 
+/**
+ * Extracts token usage metadata from OpenAI responses.
+ *
+ * @example
+ * ```ts
+ * const usage = extractUsage({ usage: { input_tokens: 1, output_tokens: 2, total_tokens: 3 } });
+ * ```
+ */
 function extractUsage(response: unknown): OpenAIUsage | undefined {
   if (!isRecord(response)) return undefined;
   const usage = response.usage;
@@ -230,6 +278,14 @@ function extractUsage(response: unknown): OpenAIUsage | undefined {
   return Object.keys(result).length ? result : undefined;
 }
 
+/**
+ * Normalizes unknown errors into a consistent shape.
+ *
+ * @example
+ * ```ts
+ * const normalized = normalizeError(new Error("boom"));
+ * ```
+ */
 function normalizeError(error: unknown): OpenAICallError {
   let message = "Unknown error";
   let name: string | undefined;
@@ -269,6 +325,14 @@ function normalizeError(error: unknown): OpenAICallError {
   };
 }
 
+/**
+ * Picks a subset of keys from a record, truncating long strings.
+ *
+ * @example
+ * ```ts
+ * const picked = pickKeys({ model: "gpt-4o", input: "hi" }, ["model"]);
+ * ```
+ */
 function pickKeys(
   value: unknown,
   keys: string[],
@@ -287,11 +351,28 @@ function pickKeys(
   return Object.keys(output).length ? output : undefined;
 }
 
+/**
+ * Truncates string values to a maximum length.
+ *
+ * @example
+ * ```ts
+ * truncateValue("hello world", 20); // "hello world"
+ * truncateValue("hello world, with more text", 20);
+ * ```
+ */
 function truncateValue(value: unknown, maxLength: number): unknown {
   if (typeof value !== "string") return value;
   return truncateString(value, maxLength);
 }
 
+/**
+ * Truncates a string to a maximum length with a suffix.
+ *
+ * @example
+ * ```ts
+ * truncateString("hello world, with more text", 20);
+ * ```
+ */
 function truncateString(value: string, maxLength: number): string {
   if (maxLength <= 0) return "";
   if (value.length <= maxLength) return value;
@@ -300,10 +381,26 @@ function truncateString(value: string, maxLength: number): string {
   return `${value.slice(0, sliceLength)}${suffix}`;
 }
 
+/**
+ * Checks whether a value is a non-array object.
+ *
+ * @example
+ * ```ts
+ * const ok = isRecord({ a: 1 }); // true
+ * ```
+ */
 function isRecord(value: unknown): value is UnknownRecord {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ * Checks whether a value is a finite number.
+ *
+ * @example
+ * ```ts
+ * const ok = isNumber(1); // true
+ * ```
+ */
 function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
