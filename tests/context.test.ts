@@ -73,6 +73,46 @@ describe("Context", () => {
     });
   });
 
+  it("measure records performance data for sync work", () => {
+    Context.run({}, () => {
+      const result = Context.measure(
+        "sync.work",
+        () => {
+          return "ok";
+        },
+        { data: { stage: "test" } }
+      );
+
+      expect(result).toBe("ok");
+      const perf = Context.getValue("perf") as Array<Record<string, unknown>>;
+      expect(Array.isArray(perf)).toBe(true);
+      expect(perf.length).toBe(1);
+      expect(perf[0].name).toBe("sync.work");
+      expect(perf[0].data).toEqual({ stage: "test" });
+      expect(perf[0].durationMs).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("measure records performance data for async work and errors", async () => {
+    await Context.run({}, async () => {
+      await Context.measure("async.work", async () => {
+        await Promise.resolve();
+      });
+
+      await expect(
+        Context.measure("async.fail", async () => {
+          throw new Error("boom");
+        })
+      ).rejects.toThrow("boom");
+
+      const perf = Context.getValue("perf") as Array<Record<string, unknown>>;
+      expect(perf.length).toBe(2);
+      expect(perf[0].name).toBe("async.work");
+      expect(perf[1].name).toBe("async.fail");
+      expect(perf[1].error).toEqual({ name: "Error", message: "boom" });
+    });
+  });
+
   it("remove and safeRemove behave correctly", () => {
     Context.run({ token: "abc" }, () => {
       Context.remove("token");
