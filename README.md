@@ -86,6 +86,31 @@ const logger = createLogger({
 logger.info("structured log", { feature: "json" });
 ```
 
+## OpenAI wrapper
+
+Capture OpenAI call metadata inside the current async context.
+
+```ts
+import OpenAI from "openai";
+import { Context, withOpenAIContext } from "@marceloraineri/async-context";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+await Context.run({ requestId: "req_123" }, async () => {
+  const response = await withOpenAIContext(
+    "responses.create",
+    { model: "gpt-4o", input: "Hello!" },
+    (req) => openai.responses.create(req),
+    { includeRequest: true }
+  );
+
+  console.log(response.id);
+  console.log(Context.getValue("openai"));
+});
+```
+
+By default, the wrapper appends summaries to the `openai` context key, and only includes safe request fields unless you explicitly allow more keys.
+
 ## DX and configuration
 
 Use presets or environment variables to configure logging without code changes.
