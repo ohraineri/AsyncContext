@@ -1,4 +1,11 @@
-export { Context, type ContextStore } from "./core/context";
+export {
+  Context,
+  type ContextStore,
+  type PerformanceEntry,
+  type PerformanceError,
+  type PerformanceMeasureOptions,
+  type PerformanceRecordOptions,
+} from "./core/context";
 export {
   AsyncContextExpresssMiddleware,
   AsyncContextExpressMiddleware,
