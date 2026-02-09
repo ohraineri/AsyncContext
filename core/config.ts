@@ -17,6 +17,14 @@ const LOG_LEVELS: LogLevel[] = [
   "fatal",
 ];
 
+/**
+ * Picks the first non-empty environment value from a list of keys.
+ *
+ * @example
+ * ```ts
+ * const value = pickEnv(process.env, ["LOG_LEVEL", "LOGGER_LEVEL"]);
+ * ```
+ */
 function pickEnv(env: NodeJS.ProcessEnv, keys: string[]) {
   for (const key of keys) {
     const value = env[key];
@@ -25,6 +33,15 @@ function pickEnv(env: NodeJS.ProcessEnv, keys: string[]) {
   return undefined;
 }
 
+/**
+ * Parses a boolean-like env value.
+ *
+ * @example
+ * ```ts
+ * parseBooleanEnv("true"); // true
+ * parseBooleanEnv("0"); // false
+ * ```
+ */
 export function parseBooleanEnv(value: string | undefined): boolean | undefined {
   if (value === undefined) return undefined;
   const normalized = value.trim().toLowerCase();
@@ -33,6 +50,14 @@ export function parseBooleanEnv(value: string | undefined): boolean | undefined 
   return undefined;
 }
 
+/**
+ * Parses a number-like env value.
+ *
+ * @example
+ * ```ts
+ * parseNumberEnv("0.25"); // 0.25
+ * ```
+ */
 export function parseNumberEnv(value: string | undefined): number | undefined {
   if (value === undefined) return undefined;
   const parsed = Number(value);
@@ -40,6 +65,14 @@ export function parseNumberEnv(value: string | undefined): number | undefined {
   return parsed;
 }
 
+/**
+ * Parses a comma-separated env value into an array.
+ *
+ * @example
+ * ```ts
+ * parseCsvEnv("a, b, c"); // ["a", "b", "c"]
+ * ```
+ */
 export function parseCsvEnv(value: string | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
@@ -50,7 +83,17 @@ export function parseCsvEnv(value: string | undefined): string[] | undefined {
     .filter(Boolean);
 }
 
-export function parseLogLevelEnv(value: string | undefined): LogLevel | undefined {
+/**
+ * Parses a log level from an env value.
+ *
+ * @example
+ * ```ts
+ * parseLogLevelEnv("warning"); // "warn"
+ * ```
+ */
+export function parseLogLevelEnv(
+  value: string | undefined
+): LogLevel | undefined {
   if (!value) return undefined;
   let normalized = value.trim().toLowerCase();
   if (normalized === "warning") normalized = "warn";
@@ -61,6 +104,14 @@ export function parseLogLevelEnv(value: string | undefined): LogLevel | undefine
   return undefined;
 }
 
+/**
+ * Parses a log format from an env value.
+ *
+ * @example
+ * ```ts
+ * parseLogFormatEnv("json"); // "json"
+ * ```
+ */
 export function parseLogFormatEnv(
   value: string | undefined
 ): "json" | "pretty" | undefined {
@@ -70,6 +121,14 @@ export function parseLogFormatEnv(
   return undefined;
 }
 
+/**
+ * Parses a logger preset from an env value.
+ *
+ * @example
+ * ```ts
+ * parseLoggerPresetEnv("production"); // "production"
+ * ```
+ */
 export function parseLoggerPresetEnv(
   value: string | undefined
 ): LoggerPreset | undefined {
@@ -81,6 +140,14 @@ export function parseLoggerPresetEnv(
   return undefined;
 }
 
+/**
+ * Returns a predefined logger configuration.
+ *
+ * @example
+ * ```ts
+ * const options = loggerPreset("development");
+ * ```
+ */
 export function loggerPreset(preset: LoggerPreset): LoggerOptions {
   switch (preset) {
     case "development":
@@ -116,10 +183,26 @@ export function loggerPreset(preset: LoggerPreset): LoggerOptions {
   }
 }
 
+/**
+ * Clamps a numeric value between a minimum and maximum.
+ *
+ * @example
+ * ```ts
+ * clamp(10, 0, 5); // 5
+ * ```
+ */
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+/**
+ * Creates a logger based on environment variables and optional defaults.
+ *
+ * @example
+ * ```ts
+ * const logger = createLoggerFromEnv({ name: "api" });
+ * ```
+ */
 export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
   const env = options.env ?? process.env;
   const presetName = parseLoggerPresetEnv(pickEnv(env, ["LOG_PRESET"]));
