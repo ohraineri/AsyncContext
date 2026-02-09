@@ -2,6 +2,30 @@ import { AsyncLocalStorage } from "node:async_hooks";
 
 export type ContextStore = Record<string, any>;
 
+export type PerformanceError = {
+  name?: string;
+  message: string;
+};
+
+export type PerformanceEntry = {
+  name: string;
+  durationMs: number;
+  startedAt: number;
+  endedAt: number;
+  data?: Record<string, unknown>;
+  error?: PerformanceError;
+};
+
+export type PerformanceRecordOptions = {
+  key?: string;
+  mode?: "append" | "overwrite";
+};
+
+export type PerformanceMeasureOptions = PerformanceRecordOptions & {
+  data?: Record<string, unknown>;
+  now?: () => number;
+};
+
 /**
  * Provides an application-wide asynchronous context using Node.js AsyncLocalStorage.
  * Allows storing and retrieving key/value data within the active async execution flow.
@@ -215,6 +239,90 @@ export class Context {
     throw new Error(`Context value "${key}" is not an object.`);
   }
 
+  /**
+   * Records a performance entry in the active context.
+   */
+  static recordPerformance(
+    entry: PerformanceEntry,
+    options: PerformanceRecordOptions = {}
+  ): void {
+    const contextObject = Context.getStore<Record<string, unknown>>();
+    if (!contextObject) return;
+
+    const key = options.key ?? "perf";
+    const mode = options.mode ?? "append";
+
+    if (mode === "overwrite") {
+      contextObject[key] = entry;
+      return;
+    }
+
+    const existing = contextObject[key];
+    if (Array.isArray(existing)) {
+      existing.push(entry);
+      return;
+    }
+
+    if (existing === undefined) {
+      contextObject[key] = [entry];
+      return;
+    }
+
+    contextObject[key] = [existing, entry];
+  }
+
+  /**
+   * Measures sync/async work and stores the timing in the active context.
+   */
+  static measure<T>(
+    name: string,
+    callback: () => T,
+    options: PerformanceMeasureOptions = {}
+  ): T {
+    const now = options.now ?? Date.now;
+    const startedAt = now();
+
+    const finalize = (error?: unknown) => {
+      const endedAt = now();
+      const entry: PerformanceEntry = {
+        name,
+        startedAt,
+        endedAt,
+        durationMs: Math.max(0, endedAt - startedAt),
+      };
+
+      if (options.data) {
+        entry.data = { ...options.data };
+      }
+
+      if (error) {
+        entry.error = normalizePerformanceError(error);
+      }
+
+      Context.recordPerformance(entry, options);
+    };
+
+    try {
+      const result = callback();
+      if (isPromiseLike(result)) {
+        return (result
+          .then((value) => {
+            finalize();
+            return value;
+          })
+          .catch((error) => {
+            finalize(error);
+            throw error;
+          })) as T;
+      }
+      finalize();
+      return result;
+    } catch (error) {
+      finalize(error);
+      throw error;
+    }
+  }
+
   static remove(key: string): ContextStore {
     const contextObject = Context.requireStore();
     if (Object.prototype.hasOwnProperty.call(contextObject, key)) {
@@ -233,4 +341,25 @@ export class Context {
     delete contextObject[key];
     return contextObject;
   }
+}
+
+function isPromiseLike<T>(value: T | Promise<T>): value is Promise<T> {
+  return !!value && typeof (value as Promise<T>).then === "function";
+}
+
+function normalizePerformanceError(error: unknown): PerformanceError {
+  if (error instanceof Error) {
+    return { name: error.name, message: error.message };
+  }
+  if (typeof error === "string") {
+    return { message: error };
+  }
+  if (error && typeof error === "object") {
+    const maybe = error as { message?: unknown; name?: unknown };
+    const message =
+      typeof maybe.message === "string" ? maybe.message : "Unknown error";
+    const name = typeof maybe.name === "string" ? maybe.name : undefined;
+    return { name, message };
+  }
+  return { message: String(error) };
 }
