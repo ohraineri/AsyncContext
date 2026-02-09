@@ -111,6 +111,28 @@ await Context.run({ requestId: "req_123" }, async () => {
 
 By default, the wrapper appends summaries to the `openai` context key, and only includes safe request fields unless you explicitly allow more keys.
 
+## Performance timing
+
+Measure sync or async work and store timing data in the active context.
+
+```ts
+import { Context } from "@marceloraineri/async-context";
+
+await Context.run({}, async () => {
+  await Context.measure("db.query", async () => {
+    await Promise.resolve();
+  }, { data: { table: "users" } });
+
+  console.log(Context.getValue("perf"));
+});
+```
+
+Use `key` or `mode` to control where entries are stored.
+
+```ts
+Context.measure("cache.lookup", () => "hit", { key: "performance", mode: "overwrite" });
+```
+
 ## DX and configuration
 
 Use presets or environment variables to configure logging without code changes.
