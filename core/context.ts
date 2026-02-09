@@ -29,11 +29,26 @@ export type PerformanceMeasureOptions = PerformanceRecordOptions & {
 /**
  * Provides an application-wide asynchronous context using Node.js AsyncLocalStorage.
  * Allows storing and retrieving key/value data within the active async execution flow.
+ *
+ * @example
+ * ```ts
+ * import { Context } from "@marceloraineri/async-context";
+ *
+ * await Context.run({ requestId: "req_1" }, async () => {
+ *   Context.addValue("userId", 123);
+ *   console.log(Context.getValue("userId")); // 123
+ * });
+ * ```
  */
 export class Context {
   /**
    * Singleton instance of AsyncLocalStorage.
    * @type {AsyncLocalStorage<ContextStore>}
+   *
+   * @example
+   * ```ts
+   * const store = Context.getInstance().getStore();
+   * ```
    */
   public static asyncLocalStorageInstance: AsyncLocalStorage<ContextStore>;
 
@@ -41,6 +56,11 @@ export class Context {
    * Private constructor initializes the AsyncLocalStorage instance.
    * Called automatically when the instance does not yet exist.
    * @private
+   *
+   * @example
+   * ```ts
+   * // Called internally via Context.getInstance()
+   * ```
    */
   private constructor() {
     Context.asyncLocalStorageInstance = new AsyncLocalStorage();
@@ -50,6 +70,11 @@ export class Context {
    * Returns the global AsyncLocalStorage instance, creating it if necessary.
    *
    * @returns {AsyncLocalStorage<ContextStore>} The AsyncLocalStorage singleton.
+   *
+   * @example
+   * ```ts
+   * const als = Context.getInstance();
+   * ```
    */
   static getInstance(): AsyncLocalStorage<ContextStore> {
     if (!Context.asyncLocalStorageInstance) {
@@ -60,6 +85,11 @@ export class Context {
 
   /**
    * Returns the current context store, if any.
+   *
+   * @example
+   * ```ts
+   * const store = Context.getStore();
+   * ```
    */
   static getStore<T extends ContextStore = ContextStore>(): T | undefined {
     return Context.getInstance().getStore() as T | undefined;
@@ -69,6 +99,11 @@ export class Context {
    * Returns the current context store, throwing when none exists.
    *
    * @throws {Error} If called outside of an active context.
+   *
+   * @example
+   * ```ts
+   * const store = Context.requireStore();
+   * ```
    */
   static requireStore<T extends ContextStore = ContextStore>(): T {
     const contextObject = Context.getStore<T>();
@@ -81,6 +116,13 @@ export class Context {
 
   /**
    * Runs the provided callback inside a new async context.
+   *
+   * @example
+   * ```ts
+   * Context.run({ requestId: "req_1" }, () => {
+   *   console.log(Context.getValue("requestId"));
+   * });
+   * ```
    */
   static run<T>(callback: () => T): T;
   static run<T>(initialStore: ContextStore, callback: () => T): T;
@@ -105,6 +147,15 @@ export class Context {
   /**
    * Runs the callback inside a new child context derived from the current store.
    * Useful for creating a scoped overlay without mutating the parent store.
+   *
+   * @example
+   * ```ts
+   * Context.run({ requestId: "req_1" }, () => {
+   *   Context.runWith({ feature: "beta" }, () => {
+   *     console.log(Context.getStore());
+   *   });
+   * });
+   * ```
    */
   static runWith<T>(values: ContextStore, callback: () => T): T {
     const parentStore = Context.getStore<ContextStore>();
@@ -114,6 +165,11 @@ export class Context {
 
   /**
    * Enters the given store for the current execution (advanced usage).
+   *
+   * @example
+   * ```ts
+   * Context.enterWith({ requestId: "req_1" });
+   * ```
    */
   static enterWith(store: ContextStore): void {
     Context.getInstance().enterWith(store);
@@ -121,6 +177,11 @@ export class Context {
 
   /**
    * Returns a shallow copy of the active store, or undefined when no context exists.
+   *
+   * @example
+   * ```ts
+   * const snapshot = Context.snapshot();
+   * ```
    */
   static snapshot<T extends ContextStore = ContextStore>(): T | undefined {
     const contextObject = Context.getStore<T>();
@@ -130,6 +191,11 @@ export class Context {
 
   /**
    * Returns the value for a key in the active context.
+   *
+   * @example
+   * ```ts
+   * const requestId = Context.getValue("requestId", "fallback");
+   * ```
    */
   static getValue<T = unknown>(key: string, defaultValue?: T): T | undefined {
     const contextObject = Context.getStore();
@@ -142,6 +208,11 @@ export class Context {
 
   /**
    * Returns the value for a key, throwing if it does not exist.
+   *
+   * @example
+   * ```ts
+   * const requestId = Context.requireValue("requestId");
+   * ```
    */
   static requireValue<T = unknown>(key: string): T {
     const contextObject = Context.requireStore();
@@ -153,6 +224,13 @@ export class Context {
 
   /**
    * Returns true when the active context has the given key.
+   *
+   * @example
+   * ```ts
+   * if (Context.has("tenantId")) {
+   *   console.log("tenant set");
+   * }
+   * ```
    */
   static has(key: string): boolean {
     const contextObject = Context.getStore();
@@ -163,6 +241,11 @@ export class Context {
 
   /**
    * Sets a value only when the key is currently missing.
+   *
+   * @example
+   * ```ts
+   * Context.setDefault("locale", "pt-BR");
+   * ```
    */
   static setDefault<T = unknown>(key: string, value: T): T {
     const contextObject = Context.requireStore();
@@ -174,6 +257,11 @@ export class Context {
 
   /**
    * Clears all keys from the active context store.
+   *
+   * @example
+   * ```ts
+   * Context.reset();
+   * ```
    */
   static reset(): ContextStore {
     const contextObject = Context.requireStore();
@@ -191,6 +279,11 @@ export class Context {
    * @returns {Record<string, any>} The updated context object.
    *
    * @throws {Error} If called outside of an active `Context.run(...)`.
+   *
+   * @example
+   * ```ts
+   * Context.addValue("tenantId", "t_123");
+   * ```
    */
   static addValue(key: string, value: any): ContextStore {
     const contextObject = Context.requireStore();
@@ -205,6 +298,11 @@ export class Context {
    * @returns {Record<string, any>} The merged context object.
    *
    * @throws {Error} If called outside of an active `Context.run(...)`.
+   *
+   * @example
+   * ```ts
+   * Context.addObjectValue({ feature: "beta", locale: "pt-BR" });
+   * ```
    */
   static addObjectValue(object: Record<string, any>): ContextStore {
     const contextObject = Context.requireStore();
@@ -221,6 +319,11 @@ export class Context {
    *
    * @throws {Error} If called outside of an active `Context.run(...)`.
    * @throws {Error} If the existing options bag is not an object.
+   *
+   * @example
+   * ```ts
+   * Context.addOptions({ retry: 2, feature: "beta" });
+   * ```
    */
   static addOptions(options: Record<string, any>, key = "options"): ContextStore {
     const contextObject = Context.requireStore();
@@ -241,6 +344,16 @@ export class Context {
 
   /**
    * Records a performance entry in the active context.
+   *
+   * @example
+   * ```ts
+   * Context.recordPerformance({
+   *   name: "db.query",
+   *   startedAt: Date.now(),
+   *   endedAt: Date.now(),
+   *   durationMs: 0,
+   * });
+   * ```
    */
   static recordPerformance(
     entry: PerformanceEntry,
@@ -273,6 +386,13 @@ export class Context {
 
   /**
    * Measures sync/async work and stores the timing in the active context.
+   *
+   * @example
+   * ```ts
+   * await Context.measure("cache.lookup", async () => {
+   *   await Promise.resolve();
+   * });
+   * ```
    */
   static measure<T>(
     name: string,
@@ -323,6 +443,14 @@ export class Context {
     }
   }
 
+  /**
+   * Removes a key from the active context (no-op if missing).
+   *
+   * @example
+   * ```ts
+   * Context.remove("token");
+   * ```
+   */
   static remove(key: string): ContextStore {
     const contextObject = Context.requireStore();
     if (Object.prototype.hasOwnProperty.call(contextObject, key)) {
@@ -331,6 +459,14 @@ export class Context {
     return contextObject;
   }
 
+  /**
+   * Removes a key from the active context, throwing if it does not exist.
+   *
+   * @example
+   * ```ts
+   * Context.safeRemove("token");
+   * ```
+   */
   static safeRemove(key: string): ContextStore {
     const contextObject = Context.requireStore();
     if (!Object.prototype.hasOwnProperty.call(contextObject, key)) {
@@ -343,10 +479,26 @@ export class Context {
   }
 }
 
+/**
+ * Checks whether a value behaves like a Promise.
+ *
+ * @example
+ * ```ts
+ * const ok = isPromiseLike(Promise.resolve());
+ * ```
+ */
 function isPromiseLike<T>(value: T | Promise<T>): value is Promise<T> {
   return !!value && typeof (value as Promise<T>).then === "function";
 }
 
+/**
+ * Normalizes unknown error values into a consistent shape.
+ *
+ * @example
+ * ```ts
+ * const normalized = normalizePerformanceError(new Error("boom"));
+ * ```
+ */
 function normalizePerformanceError(error: unknown): PerformanceError {
   if (error instanceof Error) {
     return { name: error.name, message: error.message };
