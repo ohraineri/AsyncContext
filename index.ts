@@ -69,3 +69,11 @@ export type {
   SentryScopeLike,
   SentryUserMapping,
 } from "./core/integrations/sentry";
+export {
+  withOpenAIContext,
+  recordOpenAICall,
+  type OpenAICallContext,
+  type OpenAICallError,
+  type OpenAIContextOptions,
+  type OpenAIUsage,
+} from "./core/integrations/openai";
