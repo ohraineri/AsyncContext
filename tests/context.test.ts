@@ -50,6 +50,29 @@ describe("Context", () => {
     });
   });
 
+  it("addOptions merges into an options bag", () => {
+    Context.run({ base: true }, () => {
+      Context.addOptions({ feature: true });
+      Context.addOptions({ level: "debug" });
+      const store = Context.getStore() as Record<string, unknown>;
+      expect(store.base).toBe(true);
+      expect(store.options).toEqual({ feature: true, level: "debug" });
+    });
+  });
+
+  it("addOptions supports a custom key and validates existing value", () => {
+    Context.run({ config: { retry: 1 } }, () => {
+      Context.addOptions({ retry: 2, timeout: 500 }, "config");
+      expect(Context.getValue("config")).toEqual({ retry: 2, timeout: 500 });
+    });
+
+    Context.run({ options: "not-an-object" }, () => {
+      expect(() => Context.addOptions({ ok: true })).toThrow(
+        "Context value \"options\" is not an object."
+      );
+    });
+  });
+
   it("remove and safeRemove behave correctly", () => {
     Context.run({ token: "abc" }, () => {
       Context.remove("token");
