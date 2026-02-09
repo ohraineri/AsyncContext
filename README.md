@@ -27,12 +27,14 @@ import { Context } from "@marceloraineri/async-context";
 
 await Context.run({ requestId: crypto.randomUUID() }, async () => {
   Context.addValue("user", { id: 42, name: "Ada" });
+  Context.addOptions({ feature: "beta", retry: 2 });
 
   await Promise.resolve();
 
   const store = Context.getStore();
   console.log(store?.requestId); // 184fa9a3-f967-4a98-9d8f-57152e7cbe64
   console.log(store?.user); // { id: 42, name: "Ada" }
+  console.log(store?.options); // { feature: "beta", retry: 2 }
 });
 ```
 
