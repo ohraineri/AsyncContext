@@ -36,6 +36,15 @@ export type KoaMiddleware<Ctx = KoaContextLike> = (
 
 /**
  * Creates a Koa middleware that initializes AsyncContext per request.
+ *
+ * @example
+ * ```ts
+ * import Koa from "koa";
+ * import { createAsyncContextKoaMiddleware } from "@marceloraineri/async-context";
+ *
+ * const app = new Koa();
+ * app.use(createAsyncContextKoaMiddleware());
+ * ```
  */
 export function createAsyncContextKoaMiddleware<Ctx = KoaContextLike>(
   options: AsyncContextKoaOptions<Ctx> = {}

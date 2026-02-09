@@ -43,7 +43,16 @@ export type FastifyHook<Req = FastifyRequestLike, Reply = FastifyReplyLike> = (
 ) => void | Promise<void>;
 
 /**
- * Creates a Fastify onRequest hook that initializes AsyncContext.
+ * Creates a Fastify `onRequest` hook that initializes AsyncContext.
+ *
+ * @example
+ * ```ts
+ * import fastify from "fastify";
+ * import { createAsyncContextFastifyHook } from "@marceloraineri/async-context";
+ *
+ * const app = fastify();
+ * app.addHook("onRequest", createAsyncContextFastifyHook());
+ * ```
  */
 export function createAsyncContextFastifyHook<
   Req = FastifyRequestLike,
@@ -73,6 +82,15 @@ export function createAsyncContextFastifyHook<
 
 /**
  * Convenience helper to register the hook with a Fastify-like instance.
+ *
+ * @example
+ * ```ts
+ * import fastify from "fastify";
+ * import { registerAsyncContextFastify } from "@marceloraineri/async-context";
+ *
+ * const app = fastify();
+ * registerAsyncContextFastify(app);
+ * ```
  */
 export function registerAsyncContextFastify<
   Req = FastifyRequestLike,

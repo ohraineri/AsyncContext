@@ -10,8 +10,21 @@ type AdonisContext = Record<string, unknown>;
  *
  * Compatible with AdonisJS' middleware signature:
  * `async handle(ctx, next)`.
+ *
+ * @example
+ * ```ts
+ * // Register AsyncContextAdonisMiddleware in AdonisJS middleware pipeline.
+ * ```
  */
 export class AsyncContextAdonisMiddleware {
+  /**
+   * Adonis middleware entrypoint.
+   *
+   * @example
+   * ```ts
+   * // Called by AdonisJS at runtime.
+   * ```
+   */
   async handle(_ctx: AdonisContext, next: NextFunction) {
     const uuid = crypto.randomUUID();
     const localStorageInstance = Context.getInstance();

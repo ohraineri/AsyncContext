@@ -27,47 +27,26 @@ export type AsyncContextExpressOptions = {
 };
 
 /**
- * Express middleware that initializes a new asynchronous context
- * for each incoming request.  
+ * Creates an Express middleware that initializes a new async context per request.
+ * A unique request id is generated and stored under `idKey`.
  *
- * This middleware assigns a unique `instance_id` (UUID) to the
- * request lifecycle and stores it inside AsyncLocalStorage,
- * allowing the application to later retrieve per-request data
- * without passing parameters through function calls.
- *
- * It is designed to simplify building request-scoped state,
- * such as logging correlation IDs or storing metadata across
- * asynchronous operations.
- *
- * @function AsyncContextExpressMiddleware
- *
- * @param {http.IncomingMessage} req - The current HTTP request.
- * @param {http.ServerResponse} res - The current HTTP response.
- * @param {Function} next - Express continuation callback.
+ * @param {AsyncContextExpressOptions} [options] - Middleware options.
+ * @returns Express middleware that seeds the async context.
  *
  * @example
- * // Usage in an Express application
+ * ```ts
  * import express from "express";
- * import { AsyncContextExpressMiddleware } from "@marceloraineri/async-context";
+ * import { createAsyncContextExpressMiddleware } from "@marceloraineri/async-context";
  *
  * const app = express();
- *
- * app.use(AsyncContextExpressMiddleware);
- *
- * app.get("/test", (req, res) => {
- *   const context = Context.getStore();
- *   console.log(context?.instance_id); // Unique per request
- *   res.send("OK");
- * });
- *
- * @description
- * A new asynchronous context is created via:
- * `Context.getInstance().run({ instance_id: <uuid> }, ...)`
- *
- * This ensures that all async operations inside the request
- * share the same context object until the request completes.
+ * app.use(
+ *   createAsyncContextExpressMiddleware({
+ *     idKey: "request_id",
+ *     seed: (req) => ({ method: req.method, path: req.url }),
+ *   })
+ * );
+ * ```
  */
-
 export function createAsyncContextExpressMiddleware(
   options: AsyncContextExpressOptions = {}
 ) {
@@ -91,6 +70,15 @@ export function createAsyncContextExpressMiddleware(
 
 const defaultExpressMiddleware = createAsyncContextExpressMiddleware();
 
+/**
+ * Express middleware that initializes a new async context per request
+ * with default options.
+ *
+ * @example
+ * ```ts
+ * app.use(AsyncContextExpressMiddleware);
+ * ```
+ */
 export function AsyncContextExpresssMiddleware(
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -99,4 +87,12 @@ export function AsyncContextExpresssMiddleware(
   return defaultExpressMiddleware(req, res, next);
 }
 
+/**
+ * Alias for `AsyncContextExpresssMiddleware`.
+ *
+ * @example
+ * ```ts
+ * app.use(AsyncContextExpressMiddleware);
+ * ```
+ */
 export const AsyncContextExpressMiddleware = AsyncContextExpresssMiddleware;
