@@ -187,6 +187,34 @@ export class Context {
     return Object.assign(contextObject, object) as ContextStore;
   }
 
+  /**
+   * Merges an options object into the active context.
+   * Creates the options bag when it does not exist.
+   *
+   * @param {Record<string, any>} options - Options to merge into the context.
+   * @param {string} key - Optional key name for the options bag.
+   * @returns {Record<string, any>} The updated context object.
+   *
+   * @throws {Error} If called outside of an active `Context.run(...)`.
+   * @throws {Error} If the existing options bag is not an object.
+   */
+  static addOptions(options: Record<string, any>, key = "options"): ContextStore {
+    const contextObject = Context.requireStore();
+    const existing = contextObject[key];
+
+    if (existing === undefined) {
+      contextObject[key] = { ...options };
+      return contextObject;
+    }
+
+    if (existing && typeof existing === "object" && !Array.isArray(existing)) {
+      Object.assign(existing as Record<string, any>, options);
+      return contextObject;
+    }
+
+    throw new Error(`Context value "${key}" is not an object.`);
+  }
+
   static remove(key: string): ContextStore {
     const contextObject = Context.requireStore();
     if (Object.prototype.hasOwnProperty.call(contextObject, key)) {
