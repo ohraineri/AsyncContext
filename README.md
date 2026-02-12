@@ -111,6 +111,44 @@ await Context.run({ requestId: "req_123" }, async () => {
 
 By default, the wrapper appends summaries to the `openai` context key, and only includes safe request fields unless you explicitly allow more keys.
 
+## OpenTelemetry (optional)
+
+Create spans, propagate trace context from headers, and sync baggage with AsyncContext when `@opentelemetry/api` is available.
+
+```ts
+import * as otel from "@opentelemetry/api";
+import {
+  Context,
+  createAsyncContextExpressOpenTelemetryMiddleware,
+  setOpenTelemetryBaggageFromContext,
+  withOpenTelemetrySpan,
+} from "@marceloraineri/async-context";
+
+app.use(
+  createAsyncContextExpressOpenTelemetryMiddleware({
+    otel: {
+      api: otel,
+      tracerName: "api",
+      contextAttributeKeys: ["requestId", "tenantId"],
+    },
+  })
+);
+
+await Context.run({ requestId: "req_1", tenantId: "t_123" }, async () => {
+  await withOpenTelemetrySpan(
+    "db.query",
+    async () => Promise.resolve(),
+    { api: otel, attributes: { db: "users" } }
+  );
+
+  setOpenTelemetryBaggageFromContext({
+    api: otel,
+    contextKeys: ["requestId", "tenantId"],
+    baggagePrefix: "ctx.",
+  });
+});
+```
+
 ## Performance timing
 
 Measure sync or async work and store timing data in the active context.
@@ -330,6 +368,13 @@ app.use(sentryErrorHandler());
 - `createAsyncContextFastifyHook(options)` and `registerAsyncContextFastify(app, options)`
 - `createAsyncContextKoaMiddleware(options)`
 - `createAsyncContextNextHandler(handler, options)`
+- `withOpenTelemetrySpan(name, callback, options)` and `recordOpenTelemetrySpan(summary, options)`
+- `createAsyncContextExpressOpenTelemetryMiddleware(options)`
+- `createAsyncContextFastifyOpenTelemetryHook(options)`
+- `createAsyncContextKoaOpenTelemetryMiddleware(options)`
+- `createAsyncContextNextOpenTelemetryHandler(handler, options)`
+- `setOpenTelemetryBaggageFromContext(options)` and `mergeContextFromOpenTelemetryBaggage(options)`
+- `extractOpenTelemetryContextFromHeaders(headers, options)` and `injectOpenTelemetryContextToHeaders(headers, options)`
 - `initSentryWithAsyncContext(options)` and `captureExceptionWithContext(error)`
 
 ## Best practices
