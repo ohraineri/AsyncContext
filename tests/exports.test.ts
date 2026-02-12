@@ -11,11 +11,15 @@ describe("exports", () => {
     expect(rootExports.createAsyncContextKoaMiddleware).toBeDefined();
     expect(rootExports.createAsyncContextNextHandler).toBeDefined();
     expect(rootExports.createLoggerFromEnv).toBeDefined();
+    expect(rootExports.withOpenTelemetrySpan).toBeDefined();
+    expect(rootExports.createAsyncContextExpressOpenTelemetryMiddleware).toBeDefined();
   });
 
   it("exposes public API from core entry", () => {
     expect(coreExports.Context).toBeDefined();
     expect(coreExports.createLogger).toBeDefined();
     expect(coreExports.createAsyncContextExpressMiddleware).toBeDefined();
+    expect(coreExports.withOpenTelemetrySpan).toBeDefined();
+    expect(coreExports.createAsyncContextExpressOpenTelemetryMiddleware).toBeDefined();
   });
 });
