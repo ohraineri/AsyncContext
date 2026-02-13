@@ -44,6 +44,7 @@ export {
   type LogLevel,
   type LogData,
   type LogEntry,
+  type LoggerChildOptions,
   type LoggerOptions,
   type Transport,
   type ConsoleTransportOptions,
