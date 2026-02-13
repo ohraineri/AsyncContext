@@ -71,6 +71,9 @@ const jobLogger = logger.child({ job: "import-users" });
 const end = jobLogger.startTimer("debug");
 await Promise.resolve();
 end("job completed");
+
+const noisyLogger = logger.child({ job: "debug-import" }, { level: "trace" });
+noisyLogger.trace("verbose logging enabled");
 ```
 
 ### JSON output or custom transports
@@ -360,7 +363,7 @@ app.use(sentryErrorHandler());
 - `Context.runWith(values, callback)`
 - `Context.snapshot()` and `Context.reset()`
 - `createLogger(options)` and `new Logger(options)`
-- `Logger.child(bindings)` and `Logger.startTimer(level?)`
+- `Logger.child(bindings, options?)`, `Logger.withBindings(bindings, callback, options?)`, and `Logger.startTimer(level?)`
 - `createConsoleTransport(options)`
 - `createLoggerFromEnv(options)` and `loggerPreset(preset)`
 - `parseBooleanEnv(value)`, `parseNumberEnv(value)`, `parseCsvEnv(value)`, `parseLogLevelEnv(value)`, `parseLogFormatEnv(value)`, `parseLoggerPresetEnv(value)`
