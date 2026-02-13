@@ -46,6 +46,118 @@ describe("OpenAI integration", () => {
     });
   });
 
+  it("filters request/response keys and truncates long strings", async () => {
+    const longInput = "x".repeat(40);
+    const maxStringLength = 20;
+    const suffix = "...[truncated]";
+    const expectedInput = `${longInput.slice(0, maxStringLength - suffix.length)}${suffix}`;
+
+    await Context.run({}, async () => {
+      await withOpenAIContext(
+        "responses.create",
+        { model: "gpt-4o", input: longInput, extra: "skip" },
+        async () => ({
+          id: "resp_1",
+          model: "gpt-4o",
+          status: "ok",
+          extra: "ignore",
+          _request_id: "req_1",
+        }),
+        {
+          includeRequest: true,
+          includeResponse: true,
+          requestKeys: ["model", "input"],
+          responseKeys: ["id", "status"],
+          maxStringLength,
+        }
+      );
+
+      const calls = Context.getValue("openai") as OpenAICallContext[];
+      expect(calls[0].request).toEqual({
+        model: "gpt-4o",
+        input: expectedInput,
+      });
+      expect(calls[0].response).toEqual({ id: "resp_1", status: "ok" });
+    });
+  });
+
+  it("uses prompt/completion tokens and overwrite mode", async () => {
+    await Context.run({}, async () => {
+      await withOpenAIContext(
+        "responses.create",
+        { model: "gpt-4o" },
+        async () => ({
+          id: "resp_1",
+          model: "gpt-4o",
+          usage: {
+            prompt_tokens: 3,
+            completion_tokens: 2,
+            total_tokens: 5,
+          },
+        }),
+        { mode: "overwrite" }
+      );
+
+      await withOpenAIContext(
+        "responses.create",
+        { model: "gpt-4o" },
+        async () => ({
+          id: "resp_2",
+          model: "gpt-4o",
+          usage: {
+            prompt_tokens: 4,
+            completion_tokens: 1,
+            total_tokens: 5,
+          },
+        }),
+        { mode: "overwrite" }
+      );
+
+      const entry = Context.getValue("openai") as OpenAICallContext;
+      expect(Array.isArray(entry)).toBe(false);
+      expect(entry.usage).toMatchObject({
+        inputTokens: 4,
+        outputTokens: 1,
+        totalTokens: 5,
+        promptTokens: 4,
+        completionTokens: 1,
+      });
+    });
+  });
+
+  it("normalizes nested error shapes", async () => {
+    const error = {
+      message: "outer",
+      type: "outer",
+      error: {
+        message: "inner",
+        type: "rate_limit",
+        code: "rate_limit",
+        status: 429,
+      },
+    };
+
+    await Context.run({}, async () => {
+      await expect(
+        withOpenAIContext(
+          "responses.create",
+          { model: "gpt-4o" },
+          async () => {
+            throw error;
+          }
+        )
+      ).rejects.toEqual(error);
+
+      const calls = Context.getValue("openai") as OpenAICallContext[];
+      expect(calls[0].error).toMatchObject({
+        message: "inner",
+        type: "rate_limit",
+        code: "rate_limit",
+        status: 429,
+      });
+    });
+  });
+
   it("records errors and rethrows", async () => {
     await Context.run({}, async () => {
       const error = new Error("boom");
