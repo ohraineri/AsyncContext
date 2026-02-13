@@ -30,18 +30,16 @@ export {
   type AsyncContextNextSeed,
   type NextApiHandler,
 } from "./integrations/next";
-export {
-  Logger,
-  createLogger,
-  createConsoleTransport,
-  type LogLevel,
-  type LogData,
-  type LogEntry,
-  type LoggerChildOptions,
-  type LoggerOptions,
-  type Transport,
-  type ConsoleTransportOptions,
-  type SerializedError,
+export { Logger, createLogger, createConsoleTransport } from "./logging/logger";
+export type {
+  LogLevel,
+  LogData,
+  LogEntry,
+  LoggerChildOptions,
+  LoggerOptions,
+  Transport,
+  ConsoleTransportOptions,
+  SerializedError,
 } from "./logging/logger";
 export {
   createLoggerFromEnv,
