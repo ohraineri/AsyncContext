@@ -2,22 +2,37 @@
 
 These files show how to use AsyncContext in different scenarios. They are not part of the build and are meant for reference.
 
-Run a file:
+## Prerequisites
+
+- Node.js 18+
+- Install dependencies at the repo root (`npm install`)
+
+Some examples require extra dependencies (install if you want to run them):
+- `express`
+- `fastify`
+- `koa`
+- `next`
+- `@nestjs/common`
+- `@sentry/node`
+- `@opentelemetry/api`
+
+## Run a file
 
 ```bash
 npx tsx example/basic-context.ts
 ```
 
-Some examples require extra dependencies (install if you want to run them):
-- express
-- fastify
-- koa
-- next
-- @nestjs/common
-- @sentry/node
-- @opentelemetry/api
+If you do not have `tsx` available, run from the repo root:
 
-Files:
+```bash
+npm run dev -- example/basic-context.ts
+```
+
+## Environment variables
+
+- `SENTRY_DSN` (only needed by `example/sentry.ts`)
+
+## Files
 - `example/basic-context.ts` Basic Context usage (run, add values, snapshot).
 - `example/logger-basic.ts` Logger with context, redaction, child logger, and timer.
 - `example/logger-env.ts` Logger configured from environment.
