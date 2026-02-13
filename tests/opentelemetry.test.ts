@@ -4,6 +4,9 @@ import {
   type OpenTelemetryApi,
   type OpenTelemetrySpanSummary,
   createAsyncContextExpressOpenTelemetryMiddleware,
+  extractOpenTelemetryContextFromHeaders,
+  getActiveOpenTelemetrySpanContext,
+  injectOpenTelemetryContextToHeaders,
   mergeContextFromOpenTelemetryBaggage,
   setOpenTelemetryBaggageFromContext,
   withOpenTelemetrySpan,
@@ -203,5 +206,114 @@ describe("OpenTelemetry integration", () => {
 
       expect(Context.getValue("otel_tenantId")).toBe("t_123");
     });
+  });
+
+  it("extracts and injects headers using default helpers", () => {
+    const seen: { keys?: string[]; value?: string | string[] } = {};
+    const api: OpenTelemetryApi = {
+      context: {
+        active: () => ({ base: true }),
+        with: (_ctx, fn) => fn(),
+      },
+      propagation: {
+        extract: (ctx, carrier, getter) => {
+          const keys = getter?.keys(carrier) ?? [];
+          seen.keys = keys;
+          const firstKey = keys[0];
+          seen.value = firstKey ? getter?.get(carrier, firstKey) : undefined;
+          return { ...(ctx as object), extracted: seen.value };
+        },
+        inject: (_ctx, carrier, setter) => {
+          setter?.set(carrier, "traceparent", "00-abc");
+        },
+      },
+    };
+
+    const headers = { Traceparent: "00-xyz" };
+    const extracted = extractOpenTelemetryContextFromHeaders(headers, { api });
+    expect(seen.keys).toContain("Traceparent");
+    expect(seen.value).toBe("00-xyz");
+    expect((extracted as Record<string, unknown>).extracted).toBe("00-xyz");
+
+    const out: Record<string, unknown> = {};
+    injectOpenTelemetryContextToHeaders(out, { api });
+    expect(out.traceparent).toBe("00-abc");
+  });
+
+  it("merges baggage entries and respects overwrite", () => {
+    const { api } = createFakeOpenTelemetry();
+
+    const existing = api.propagation?.createBaggage?.({
+      "ctx.old": { value: "old" },
+    });
+    const baseContext = api.propagation?.setBaggage?.({}, existing!);
+
+    Context.run({ tenantId: "t1" }, () => {
+      const ctxWithBaggage = setOpenTelemetryBaggageFromContext({
+        api,
+        context: baseContext,
+        contextKeys: ["tenantId"],
+        baggagePrefix: "ctx.",
+      });
+
+      const baggage = api.propagation?.getBaggage?.(ctxWithBaggage as any);
+      expect(baggage?.getAllEntries?.()).toEqual({
+        "ctx.old": { value: "old" },
+        "ctx.tenantId": { value: "t1" },
+      });
+    });
+
+    const baggage = api.propagation?.createBaggage?.({
+      "ctx.tenantId": { value: "new" },
+      "ctx.plan": { value: "pro" },
+    });
+    const ctx = api.propagation?.setBaggage?.({}, baggage!);
+
+    Context.run({ otel_tenantId: "keep" }, () => {
+      mergeContextFromOpenTelemetryBaggage({
+        api,
+        context: ctx,
+        baggagePrefix: "ctx.",
+        baggageKeys: ["tenantId"],
+        targetKeyPrefix: "otel_",
+      });
+
+      expect(Context.getValue("otel_tenantId")).toBe("keep");
+      expect(Context.getValue("otel_plan")).toBeUndefined();
+    });
+
+    Context.run({ otel_tenantId: "keep" }, () => {
+      mergeContextFromOpenTelemetryBaggage({
+        api,
+        context: ctx,
+        baggagePrefix: "ctx.",
+        targetKeyPrefix: "otel_",
+        mode: "overwrite",
+      });
+
+      expect(Context.getValue("otel_tenantId")).toBe("new");
+      expect(Context.getValue("otel_plan")).toBe("pro");
+    });
+  });
+
+  it("returns active span context when available", () => {
+    const span = {
+      spanContext: () => ({ traceId: "trace-1", spanId: "span-1" }),
+    };
+    const api: OpenTelemetryApi = {
+      context: {
+        active: () => ({ __span: span }),
+        with: (_ctx, fn) => fn(),
+      },
+      trace: {
+        getTracer: () => ({
+          startSpan: () => span,
+        }),
+        getSpan: (ctx) => (ctx as { __span?: typeof span }).__span,
+      },
+    };
+
+    const active = getActiveOpenTelemetrySpanContext(api);
+    expect(active).toEqual({ traceId: "trace-1", spanId: "span-1" });
   });
 });
