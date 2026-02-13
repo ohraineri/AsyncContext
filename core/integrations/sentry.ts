@@ -623,7 +623,7 @@ function applyStoreToScope(
  * });
  * ```
  */
-export async function initSentryWithAsyncContext(
+async function initSentryWithAsyncContext(
   options: InitSentryOptions = {}
 ): Promise<boolean> {
   const sentry = await getSentry();
@@ -669,7 +669,7 @@ export async function initSentryWithAsyncContext(
  * await bindAsyncContextToSentryScope({ tagKeys: ["tenantId"] });
  * ```
  */
-export async function bindAsyncContextToSentryScope(
+async function bindAsyncContextToSentryScope(
   options: SentryAsyncContextOptions = {}
 ): Promise<boolean> {
   const sentry = await getSentry();
@@ -701,7 +701,7 @@ export async function bindAsyncContextToSentryScope(
  * await captureExceptionWithContext(error);
  * ```
  */
-export async function captureExceptionWithContext(
+async function captureExceptionWithContext(
   error: unknown,
   options: SentryAsyncContextOptions = {}
 ): Promise<string | null> {
@@ -735,7 +735,7 @@ export async function captureExceptionWithContext(
  * app.use(sentryAsyncContextExpressMiddleware());
  * ```
  */
-export function sentryAsyncContextExpressMiddleware(
+function sentryAsyncContextExpressMiddleware(
   options: SentryAsyncContextOptions = {}
 ): ExpressMiddleware {
   return async (req, _res, next) => {
@@ -761,7 +761,7 @@ export function sentryAsyncContextExpressMiddleware(
  * app.use(sentryErrorHandler());
  * ```
  */
-export function sentryErrorHandler(
+function sentryErrorHandler(
   options: SentryAsyncContextOptions = {}
 ): ExpressErrorHandler {
   return async (err, req, _res, next) => {
@@ -772,3 +772,11 @@ export function sentryErrorHandler(
     }
   };
 }
+
+export {
+  initSentryWithAsyncContext,
+  bindAsyncContextToSentryScope,
+  captureExceptionWithContext,
+  sentryAsyncContextExpressMiddleware,
+  sentryErrorHandler,
+};
