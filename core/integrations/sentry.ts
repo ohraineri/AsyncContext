@@ -233,7 +233,9 @@ function setExtra(
  *
  * @example
  * ```ts
- * if (isPlainObject(value)) { /* ... */ }
+ * if (isPlainObject(value)) {
+ *   // ...
+ * }
  * ```
  */
 function isPlainObject(value: unknown): value is UnknownRecord {

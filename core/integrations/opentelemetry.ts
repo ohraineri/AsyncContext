@@ -1,4 +1,5 @@
 import { Context } from "../context";
+import type * as http from "node:http";
 import {
   createAsyncContextExpressMiddleware,
   type AsyncContextExpressOptions,
@@ -336,7 +337,9 @@ export async function withOpenTelemetrySpan<T>(
       options.contextAttributePrefix,
       options.maxAttributeValueLength ?? DEFAULT_MAX_STRING_LENGTH
     );
-    applyAttributes(span, contextAttrs, recordedAttributes);
+    if (contextAttrs) {
+      applyAttributes(span, contextAttrs, recordedAttributes);
+    }
   }
 
   const runWithSpan = <TResult>(fn: () => TResult): TResult => {
@@ -714,8 +717,8 @@ export function createAsyncContextKoaOpenTelemetryMiddleware<Ctx = KoaContextLik
 }
 
 export function createAsyncContextNextOpenTelemetryHandler<
-  Req extends { method?: string; url?: string; headers?: Record<string, unknown> },
-  Res extends { statusCode?: number; statusMessage?: string; on?: (event: string, listener: () => void) => void; once?: (event: string, listener: () => void) => void }
+  Req extends http.IncomingMessage,
+  Res extends http.ServerResponse
 >(
   handler: NextApiHandler<Req, Res>,
   options: AsyncContextNextOpenTelemetryOptions<Req, Res> = {}

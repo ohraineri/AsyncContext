@@ -134,7 +134,7 @@ export class Context {
       typeof initialStoreOrCallback === "function" ? {} : initialStoreOrCallback;
     const callback =
       typeof initialStoreOrCallback === "function"
-        ? initialStoreOrCallback
+        ? (initialStoreOrCallback as () => T)
         : maybeCallback;
 
     if (!callback) {

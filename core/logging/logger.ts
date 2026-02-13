@@ -662,7 +662,9 @@ export class Logger {
    *
    * @example
    * ```ts
-   * if (logger.isLevelEnabled("debug")) { /* ... */ }
+   * if (logger.isLevelEnabled("debug")) {
+   *   // ...
+   * }
    * ```
    */
   isLevelEnabled(level: LogLevel): boolean {
