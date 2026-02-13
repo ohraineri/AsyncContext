@@ -155,6 +155,38 @@ describe("Logger", () => {
     expect(entries.length).toBe(2);
   });
 
+  it("allows child logger overrides", () => {
+    const parentEntries: LogEntry[] = [];
+    const childEntries: LogEntry[] = [];
+
+    const parent = createLogger({
+      transport: createMemoryTransport(parentEntries),
+      level: "error",
+      name: "parent",
+      context: false,
+    });
+
+    const child = parent.child(
+      { scope: "child" },
+      {
+        level: "info",
+        name: "child",
+        transport: createMemoryTransport(childEntries),
+      }
+    );
+
+    parent.error("parent-error");
+    parent.info("parent-info");
+    child.info("child-info");
+
+    expect(parentEntries.length).toBe(1);
+    expect(parentEntries[0].message).toBe("parent-error");
+    expect(childEntries.length).toBe(1);
+    expect(childEntries[0].message).toBe("child-info");
+    expect(childEntries[0].logger).toBe("child");
+    expect(childEntries[0].bindings).toEqual({ scope: "child" });
+  });
+
   it("supports timers", () => {
     const entries: LogEntry[] = [];
     const logger = createLogger({ transport: createMemoryTransport(entries), level: "debug", context: false });
