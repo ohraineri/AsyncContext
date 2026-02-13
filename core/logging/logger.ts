@@ -47,6 +47,8 @@ export type LoggerOptions = {
   colors?: boolean;
 };
 
+export type LoggerChildOptions = Omit<LoggerOptions, "bindings">;
+
 export type ConsoleTransportOptions = {
   format?: "json" | "pretty";
   colors?: boolean;
@@ -672,32 +674,45 @@ export class Logger {
    *
    * @example
    * ```ts
-   * const child = logger.child({ job: "import" });
+   * const child = logger.child({ job: "import" }, { level: "debug" });
    * ```
    */
-  child(bindings: LogData): Logger {
+  child(bindings: LogData, options: LoggerChildOptions = {}): Logger {
     const merged = {
       ...this.bindings,
       ...(normalizeData(bindings) ?? {}),
     };
 
+    const hasCustomTransport =
+      options.transports !== undefined || options.transport !== undefined;
+    const hasTransportOptions =
+      options.format !== undefined || options.colors !== undefined;
+
+    const transports = hasCustomTransport
+      ? options.transports ?? (options.transport ? [options.transport] : undefined)
+      : hasTransportOptions
+        ? undefined
+        : this.transports;
+
     return new Logger({
-      level: this.level,
-      name: this.name,
+      level: options.level ?? this.level,
+      name: options.name ?? this.name,
       bindings: merged,
-      context: this.options.context,
-      contextKey: this.options.contextKey,
-      contextKeys: this.options.contextKeys,
-      redactDefaults: this.options.redactDefaults,
-      redactFieldNames: this.options.redactFieldNames,
-      redactKeys: this.options.redactKeys,
-      redactPlaceholder: this.options.redactPlaceholder,
-      timestamp: this.options.timestamp,
-      timeFn: this.options.timeFn,
-      sampleRate: this.options.sampleRate,
-      includePid: this.options.includePid,
-      includeHostname: this.options.includeHostname,
-      transports: this.transports,
+      context: options.context ?? this.options.context,
+      contextKey: options.contextKey ?? this.options.contextKey,
+      contextKeys: options.contextKeys ?? this.options.contextKeys,
+      redactDefaults: options.redactDefaults ?? this.options.redactDefaults,
+      redactFieldNames: options.redactFieldNames ?? this.options.redactFieldNames,
+      redactKeys: options.redactKeys ?? this.options.redactKeys,
+      redactPlaceholder: options.redactPlaceholder ?? this.options.redactPlaceholder,
+      timestamp: options.timestamp ?? this.options.timestamp,
+      timeFn: options.timeFn ?? this.options.timeFn,
+      sampleRate: options.sampleRate ?? this.options.sampleRate,
+      includePid: options.includePid ?? this.options.includePid,
+      includeHostname: options.includeHostname ?? this.options.includeHostname,
+      transports,
+      format: options.format,
+      colors: options.colors,
     });
   }
 
@@ -709,8 +724,12 @@ export class Logger {
    * logger.withBindings({ requestId: "req_1" }, (child) => child.info("ok"));
    * ```
    */
-  withBindings<T>(bindings: LogData, callback: (logger: Logger) => T): T {
-    return callback(this.child(bindings));
+  withBindings<T>(
+    bindings: LogData,
+    callback: (logger: Logger) => T,
+    options?: LoggerChildOptions
+  ): T {
+    return callback(this.child(bindings, options));
   }
 
   /**
