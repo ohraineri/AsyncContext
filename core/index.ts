@@ -43,6 +43,7 @@ export type {
 } from "./logging/logger";
 export {
   createLoggerFromEnv,
+  resolveLoggerEnv,
   loggerPreset,
   parseBooleanEnv,
   parseCsvEnv,
@@ -51,6 +52,8 @@ export {
   parseLoggerPresetEnv,
   parseNumberEnv,
   type LoggerEnvOptions,
+  type LoggerEnvResolution,
+  type LoggerEnvWarning,
   type LoggerPreset,
 } from "./config";
 

@@ -7,6 +7,11 @@ import {
 const logger = createLoggerFromEnv({
   name: "billing-api",
   defaults: loggerPreset("production"),
+  onWarning: (warning) => {
+    console.warn(`[logger-env] ${warning.key}: ${warning.reason}`, {
+      value: warning.value,
+    });
+  },
 });
 
 async function handleCheckout() {

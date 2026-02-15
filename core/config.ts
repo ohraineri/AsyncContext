@@ -2,10 +2,22 @@ import { createLogger, type LoggerOptions, type LogLevel } from "./logging/logge
 
 export type LoggerPreset = "development" | "production" | "test";
 
+export type LoggerEnvWarning = {
+  key: string;
+  value: string;
+  reason: string;
+};
+
 export type LoggerEnvOptions = {
   env?: NodeJS.ProcessEnv;
   defaults?: LoggerOptions;
   name?: string;
+  onWarning?: (warning: LoggerEnvWarning) => void;
+};
+
+export type LoggerEnvResolution = {
+  options: LoggerOptions;
+  warnings: LoggerEnvWarning[];
 };
 
 const LOG_LEVELS: LogLevel[] = [
@@ -17,6 +29,8 @@ const LOG_LEVELS: LogLevel[] = [
   "fatal",
 ];
 
+type EnvEntry = { key: string; value: string };
+
 /**
  * Picks the first non-empty environment value from a list of keys.
  *
@@ -26,9 +40,21 @@ const LOG_LEVELS: LogLevel[] = [
  * ```
  */
 function pickEnv(env: NodeJS.ProcessEnv, keys: string[]) {
+  return pickEnvEntry(env, keys)?.value;
+}
+
+/**
+ * Picks the first non-empty environment entry from a list of keys.
+ *
+ * @example
+ * ```ts
+ * const entry = pickEnvEntry(process.env, ["LOG_LEVEL", "LOGGER_LEVEL"]);
+ * ```
+ */
+function pickEnvEntry(env: NodeJS.ProcessEnv, keys: string[]): EnvEntry | undefined {
   for (const key of keys) {
     const value = env[key];
-    if (value !== undefined && value !== "") return value;
+    if (value !== undefined && value !== "") return { key, value };
   }
   return undefined;
 }
@@ -195,37 +221,84 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function warnInvalid(
+  warnings: LoggerEnvWarning[],
+  entry: EnvEntry | undefined,
+  reason: string
+) {
+  if (!entry) return;
+  warnings.push({ key: entry.key, value: entry.value, reason });
+}
+
 /**
- * Creates a logger based on environment variables and optional defaults.
+ * Resolves logger options from environment variables and defaults.
  *
  * @example
  * ```ts
- * const logger = createLoggerFromEnv({ name: "api" });
+ * const { options, warnings } = resolveLoggerEnv({ env: process.env });
  * ```
  */
-export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
+export function resolveLoggerEnv(
+  options: LoggerEnvOptions = {}
+): LoggerEnvResolution {
   const env = options.env ?? process.env;
-  const presetName = parseLoggerPresetEnv(pickEnv(env, ["LOG_PRESET"]));
+  const warnings: LoggerEnvWarning[] = [];
+
+  const presetEntry = pickEnvEntry(env, ["LOG_PRESET"]);
+  const presetName = parseLoggerPresetEnv(presetEntry?.value);
+  if (presetEntry && !presetName) {
+    warnInvalid(
+      warnings,
+      presetEntry,
+      "Invalid preset. Use development, production, or test."
+    );
+  }
+
   const base = presetName ? loggerPreset(presetName) : {};
   const defaults = { ...base, ...(options.defaults ?? {}) };
-
   const resolved: LoggerOptions = { ...defaults };
 
   const name = options.name ?? pickEnv(env, ["LOG_NAME", "LOGGER_NAME"]);
   if (name) resolved.name = name;
 
-  const level = parseLogLevelEnv(
-    pickEnv(env, ["LOG_LEVEL", "LOGLEVEL", "LOGGER_LEVEL"])
-  );
+  const levelEntry = pickEnvEntry(env, ["LOG_LEVEL", "LOGLEVEL", "LOGGER_LEVEL"]);
+  const level = parseLogLevelEnv(levelEntry?.value);
+  if (levelEntry && !level) {
+    warnInvalid(
+      warnings,
+      levelEntry,
+      "Invalid log level. Use trace, debug, info, warn, error, or fatal."
+    );
+  }
   if (level) resolved.level = level;
 
-  const format = parseLogFormatEnv(pickEnv(env, ["LOG_FORMAT"]));
+  const formatEntry = pickEnvEntry(env, ["LOG_FORMAT"]);
+  const format = parseLogFormatEnv(formatEntry?.value);
+  if (formatEntry && !format) {
+    warnInvalid(warnings, formatEntry, "Invalid format. Use json or pretty.");
+  }
   if (format) resolved.format = format;
 
-  const colors = parseBooleanEnv(pickEnv(env, ["LOG_COLORS", "LOG_COLOURS"]));
+  const colorsEntry = pickEnvEntry(env, ["LOG_COLORS", "LOG_COLOURS"]);
+  const colors = parseBooleanEnv(colorsEntry?.value);
+  if (colorsEntry && colors === undefined) {
+    warnInvalid(
+      warnings,
+      colorsEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (colors !== undefined) resolved.colors = colors;
 
-  const context = parseBooleanEnv(pickEnv(env, ["LOG_CONTEXT"]));
+  const contextEntry = pickEnvEntry(env, ["LOG_CONTEXT"]);
+  const context = parseBooleanEnv(contextEntry?.value);
+  if (contextEntry && context === undefined) {
+    warnInvalid(
+      warnings,
+      contextEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (context !== undefined) resolved.context = context;
 
   const contextKey = pickEnv(env, ["LOG_CONTEXT_KEY"]);
@@ -237,9 +310,15 @@ export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
   const redactKeys = parseCsvEnv(pickEnv(env, ["LOG_REDACT_KEYS"]));
   if (redactKeys !== undefined) resolved.redactKeys = redactKeys;
 
-  const redactDefaults = parseBooleanEnv(
-    pickEnv(env, ["LOG_REDACT_DEFAULTS"])
-  );
+  const redactDefaultsEntry = pickEnvEntry(env, ["LOG_REDACT_DEFAULTS"]);
+  const redactDefaults = parseBooleanEnv(redactDefaultsEntry?.value);
+  if (redactDefaultsEntry && redactDefaults === undefined) {
+    warnInvalid(
+      warnings,
+      redactDefaultsEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (redactDefaults !== undefined) resolved.redactDefaults = redactDefaults;
 
   const redactFieldNames = parseCsvEnv(pickEnv(env, ["LOG_REDACT_FIELDS"]));
@@ -248,21 +327,77 @@ export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
   const redactPlaceholder = pickEnv(env, ["LOG_REDACT_PLACEHOLDER"]);
   if (redactPlaceholder) resolved.redactPlaceholder = redactPlaceholder;
 
-  const sampleRate = parseNumberEnv(pickEnv(env, ["LOG_SAMPLE_RATE"]));
+  const sampleRateEntry = pickEnvEntry(env, ["LOG_SAMPLE_RATE"]);
+  const sampleRate = parseNumberEnv(sampleRateEntry?.value);
+  if (sampleRateEntry && sampleRate === undefined) {
+    warnInvalid(
+      warnings,
+      sampleRateEntry,
+      "Invalid number. Use a value between 0 and 1."
+    );
+  }
   if (sampleRate !== undefined) {
-    resolved.sampleRate = clamp(sampleRate, 0, 1);
+    const clamped = clamp(sampleRate, 0, 1);
+    if (sampleRateEntry && clamped !== sampleRate) {
+      warnInvalid(
+        warnings,
+        sampleRateEntry,
+        `Out of range (0..1). Clamped to ${clamped}.`
+      );
+    }
+    resolved.sampleRate = clamped;
   }
 
-  const includePid = parseBooleanEnv(pickEnv(env, ["LOG_INCLUDE_PID"]));
+  const includePidEntry = pickEnvEntry(env, ["LOG_INCLUDE_PID"]);
+  const includePid = parseBooleanEnv(includePidEntry?.value);
+  if (includePidEntry && includePid === undefined) {
+    warnInvalid(
+      warnings,
+      includePidEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (includePid !== undefined) resolved.includePid = includePid;
 
-  const includeHostname = parseBooleanEnv(
-    pickEnv(env, ["LOG_INCLUDE_HOSTNAME"])
-  );
+  const includeHostnameEntry = pickEnvEntry(env, ["LOG_INCLUDE_HOSTNAME"]);
+  const includeHostname = parseBooleanEnv(includeHostnameEntry?.value);
+  if (includeHostnameEntry && includeHostname === undefined) {
+    warnInvalid(
+      warnings,
+      includeHostnameEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (includeHostname !== undefined) resolved.includeHostname = includeHostname;
 
-  const timestamp = parseBooleanEnv(pickEnv(env, ["LOG_TIMESTAMP"]));
+  const timestampEntry = pickEnvEntry(env, ["LOG_TIMESTAMP"]);
+  const timestamp = parseBooleanEnv(timestampEntry?.value);
+  if (timestampEntry && timestamp === undefined) {
+    warnInvalid(
+      warnings,
+      timestampEntry,
+      "Invalid boolean. Use true/false, 1/0, yes/no, on/off."
+    );
+  }
   if (timestamp !== undefined) resolved.timestamp = timestamp;
 
-  return createLogger(resolved);
+  return { options: resolved, warnings };
+}
+
+/**
+ * Creates a logger based on environment variables and optional defaults.
+ *
+ * @example
+ * ```ts
+ * const logger = createLoggerFromEnv({ name: "api" });
+ * ```
+ */
+export function createLoggerFromEnv(options: LoggerEnvOptions = {}) {
+  const resolution = resolveLoggerEnv(options);
+  if (options.onWarning) {
+    for (const warning of resolution.warnings) {
+      options.onWarning(warning);
+    }
+  }
+  return createLogger(resolution.options);
 }

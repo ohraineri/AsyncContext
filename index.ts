@@ -50,6 +50,7 @@ export type {
 } from "./core/logging/logger";
 export {
   createLoggerFromEnv,
+  resolveLoggerEnv,
   loggerPreset,
   parseBooleanEnv,
   parseCsvEnv,
@@ -58,6 +59,8 @@ export {
   parseLoggerPresetEnv,
   parseNumberEnv,
   type LoggerEnvOptions,
+  type LoggerEnvResolution,
+  type LoggerEnvWarning,
   type LoggerPreset,
 } from "./core/config";
 export {
