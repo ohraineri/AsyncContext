@@ -124,4 +124,9 @@ describe("config helpers", () => {
     expect(parseBooleanEnv("yes")).toBe(true);
     expect(parseBooleanEnv("no")).toBe(false);
   });
+
+  it("parses boolean on/off variants", () => {
+    expect(parseBooleanEnv("on")).toBe(true);
+    expect(parseBooleanEnv("off")).toBe(false);
+  });
 });
