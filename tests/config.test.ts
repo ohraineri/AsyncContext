@@ -147,4 +147,8 @@ describe("config helpers", () => {
   it("parses numeric zero", () => {
     expect(parseNumberEnv("0")).toBe(0);
   });
+
+  it("parses negative numbers", () => {
+    expect(parseNumberEnv("-5")).toBe(-5);
+  });
 });
