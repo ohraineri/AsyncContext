@@ -151,4 +151,8 @@ describe("config helpers", () => {
   it("parses negative numbers", () => {
     expect(parseNumberEnv("-5")).toBe(-5);
   });
+
+  it("returns undefined for NaN numbers", () => {
+    expect(parseNumberEnv("NaN")).toBeUndefined();
+  });
 });
