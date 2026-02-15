@@ -119,4 +119,9 @@ describe("config helpers", () => {
     );
     expect(options.sampleRate).toBe(1);
   });
+
+  it("parses boolean yes/no variants", () => {
+    expect(parseBooleanEnv("yes")).toBe(true);
+    expect(parseBooleanEnv("no")).toBe(false);
+  });
 });
