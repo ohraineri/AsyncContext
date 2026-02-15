@@ -8,6 +8,7 @@ import {
   parseLogLevelEnv,
   parseLoggerPresetEnv,
   parseNumberEnv,
+  resolveLoggerEnv,
 } from "../core/config";
 import type { LogEntry } from "../core/logging/logger";
 
@@ -91,5 +92,31 @@ describe("config helpers", () => {
 
     expect(entries.length).toBe(1);
     expect(entries[0].logger).toBe("api");
+  });
+
+  it("collects warnings for invalid env values", () => {
+    const env = {
+      LOG_PRESET: "staging",
+      LOG_LEVEL: "verbose",
+      LOG_FORMAT: "xml",
+      LOG_COLORS: "maybe",
+      LOG_CONTEXT: "yup",
+      LOG_SAMPLE_RATE: "2",
+    } as NodeJS.ProcessEnv;
+
+    const { options, warnings } = resolveLoggerEnv({ env });
+
+    const keys = warnings.map((warning) => warning.key).sort();
+    expect(keys).toEqual(
+      [
+        "LOG_COLORS",
+        "LOG_CONTEXT",
+        "LOG_FORMAT",
+        "LOG_LEVEL",
+        "LOG_PRESET",
+        "LOG_SAMPLE_RATE",
+      ].sort()
+    );
+    expect(options.sampleRate).toBe(1);
   });
 });

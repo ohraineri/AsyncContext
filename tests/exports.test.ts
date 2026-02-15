@@ -11,6 +11,7 @@ describe("exports", () => {
     expect(rootExports.createAsyncContextKoaMiddleware).toBeDefined();
     expect(rootExports.createAsyncContextNextHandler).toBeDefined();
     expect(rootExports.createLoggerFromEnv).toBeDefined();
+    expect(rootExports.resolveLoggerEnv).toBeDefined();
     expect(rootExports.withOpenTelemetrySpan).toBeDefined();
     expect(rootExports.createAsyncContextExpressOpenTelemetryMiddleware).toBeDefined();
   });
@@ -19,6 +20,7 @@ describe("exports", () => {
     expect(coreExports.Context).toBeDefined();
     expect(coreExports.createLogger).toBeDefined();
     expect(coreExports.createAsyncContextExpressMiddleware).toBeDefined();
+    expect(coreExports.resolveLoggerEnv).toBeDefined();
     expect(coreExports.withOpenTelemetrySpan).toBeDefined();
     expect(coreExports.createAsyncContextExpressOpenTelemetryMiddleware).toBeDefined();
   });
