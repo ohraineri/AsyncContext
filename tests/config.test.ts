@@ -155,4 +155,8 @@ describe("config helpers", () => {
   it("returns undefined for NaN numbers", () => {
     expect(parseNumberEnv("NaN")).toBeUndefined();
   });
+
+  it("returns undefined for Infinity numbers", () => {
+    expect(parseNumberEnv("Infinity")).toBeUndefined();
+  });
 });
