@@ -134,4 +134,9 @@ describe("config helpers", () => {
     expect(parseBooleanEnv("y")).toBe(true);
     expect(parseBooleanEnv("n")).toBe(false);
   });
+
+  it("trims boolean whitespace", () => {
+    expect(parseBooleanEnv("  YES  ")).toBe(true);
+    expect(parseBooleanEnv("  n  ")).toBe(false);
+  });
 });
