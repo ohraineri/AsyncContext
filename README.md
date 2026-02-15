@@ -184,6 +184,11 @@ import { createLoggerFromEnv, loggerPreset } from "@marceloraineri/async-context
 const logger = createLoggerFromEnv({
   name: "api",
   defaults: loggerPreset("production"),
+  onWarning: (warning) => {
+    console.warn(`[logger-env] ${warning.key}: ${warning.reason}`, {
+      value: warning.value,
+    });
+  },
 });
 ```
 
