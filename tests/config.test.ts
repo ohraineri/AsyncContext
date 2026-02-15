@@ -323,6 +323,19 @@ describe("config helpers", () => {
     expect(options.redactFieldNames).toEqual(["token", "ssn"]);
   });
 
+  it("accepts redact field names as JSON array", () => {
+    const env = { LOG_REDACT_FIELDS: "[\"token\", \"ssn\"]" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.redactFieldNames).toEqual(["token", "ssn"]);
+  });
+
+  it("warns on invalid redact field names JSON", () => {
+    const env = { LOG_REDACT_FIELDS: "[\"token\"" } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_REDACT_FIELDS");
+  });
+
   it("clamps sample rate above 1", () => {
     const env = { LOG_SAMPLE_RATE: "5" } as NodeJS.ProcessEnv;
     const { options, warnings } = resolveLoggerEnv({ env });

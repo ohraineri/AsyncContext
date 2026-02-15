@@ -205,7 +205,7 @@ Environment variables:
 | `LOG_CONTEXT_KEYS` | Comma-separated or JSON array allowlist | `requestId,tenantId` |
 | `LOG_REDACT_KEYS` | Comma-separated redaction paths | `ctx.token,data.password` |
 | `LOG_REDACT_DEFAULTS` | Enable default sensitive-field redaction | `true` |
-| `LOG_REDACT_FIELDS` | Extra sensitive field names (comma-separated) | `accessToken,creditCard` |
+| `LOG_REDACT_FIELDS` | Extra sensitive field names (CSV or JSON array) | `accessToken,creditCard` |
 | `LOG_REDACT_PLACEHOLDER` | Mask value placeholder | `[REDACTED]` |
 | `LOG_SAMPLE_RATE` | 0..1 sampling | `0.25` |
 | `LOG_INCLUDE_PID` | Include process id | `true` |

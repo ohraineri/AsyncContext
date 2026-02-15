@@ -353,8 +353,18 @@ export function resolveLoggerEnv(
   }
   if (redactDefaults !== undefined) resolved.redactDefaults = redactDefaults;
 
-  const redactFieldNames = parseCsvEnv(pickEnv(env, ["LOG_REDACT_FIELDS"]));
-  if (redactFieldNames !== undefined) resolved.redactFieldNames = redactFieldNames;
+  const redactFieldNamesEntry = pickEnvEntry(env, ["LOG_REDACT_FIELDS"]);
+  const redactFieldNames = parseListEnv(redactFieldNamesEntry?.value);
+  if (redactFieldNamesEntry && redactFieldNames === undefined) {
+    warnInvalid(
+      warnings,
+      redactFieldNamesEntry,
+      "Invalid list. Use comma-separated values or JSON array."
+    );
+  }
+  if (redactFieldNames !== undefined) {
+    resolved.redactFieldNames = redactFieldNames;
+  }
 
   const redactPlaceholder = pickEnv(env, ["LOG_REDACT_PLACEHOLDER"]);
   if (redactPlaceholder) resolved.redactPlaceholder = redactPlaceholder;
