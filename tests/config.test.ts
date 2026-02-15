@@ -143,4 +143,8 @@ describe("config helpers", () => {
   it("treats empty boolean as undefined", () => {
     expect(parseBooleanEnv("")).toBeUndefined();
   });
+
+  it("parses numeric zero", () => {
+    expect(parseNumberEnv("0")).toBe(0);
+  });
 });
