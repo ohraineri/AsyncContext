@@ -159,4 +159,8 @@ describe("config helpers", () => {
   it("returns undefined for Infinity numbers", () => {
     expect(parseNumberEnv("Infinity")).toBeUndefined();
   });
+
+  it("parses numbers with whitespace", () => {
+    expect(parseNumberEnv(" 2 ")).toBe(2);
+  });
 });
