@@ -139,4 +139,8 @@ describe("config helpers", () => {
     expect(parseBooleanEnv("  YES  ")).toBe(true);
     expect(parseBooleanEnv("  n  ")).toBe(false);
   });
+
+  it("treats empty boolean as undefined", () => {
+    expect(parseBooleanEnv("")).toBeUndefined();
+  });
 });
