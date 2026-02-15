@@ -109,6 +109,30 @@ export function parseCsvEnv(value: string | undefined): string[] | undefined {
     .filter(Boolean);
 }
 
+function parseJsonArrayEnv(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (!trimmed.startsWith("[")) return undefined;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) return undefined;
+    return parsed.map((item) => String(item).trim()).filter(Boolean);
+  } catch {
+    return undefined;
+  }
+}
+
+function parseListEnv(value: string | undefined): string[] | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[")) {
+    return parseJsonArrayEnv(value);
+  }
+  return parseCsvEnv(value);
+}
+
 /**
  * Parses a log level from an env value.
  *
@@ -304,7 +328,15 @@ export function resolveLoggerEnv(
   const contextKey = pickEnv(env, ["LOG_CONTEXT_KEY"]);
   if (contextKey) resolved.contextKey = contextKey;
 
-  const contextKeys = parseCsvEnv(pickEnv(env, ["LOG_CONTEXT_KEYS"]));
+  const contextKeysEntry = pickEnvEntry(env, ["LOG_CONTEXT_KEYS"]);
+  const contextKeys = parseListEnv(contextKeysEntry?.value);
+  if (contextKeysEntry && contextKeys === undefined) {
+    warnInvalid(
+      warnings,
+      contextKeysEntry,
+      "Invalid list. Use comma-separated values or JSON array."
+    );
+  }
   if (contextKeys !== undefined) resolved.contextKeys = contextKeys;
 
   const redactKeys = parseCsvEnv(pickEnv(env, ["LOG_REDACT_KEYS"]));

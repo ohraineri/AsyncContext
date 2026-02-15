@@ -238,7 +238,7 @@ Key variables:
 | `LOG_FORMAT` | `json` or `pretty` | `json` |
 | `LOG_CONTEXT` | attach context | `true` |
 | `LOG_CONTEXT_KEY` | context key name | `context` |
-| `LOG_CONTEXT_KEYS` | allowlist keys | `requestId,tenantId` |
+| `LOG_CONTEXT_KEYS` | allowlist keys (CSV or JSON array) | `requestId,tenantId` |
 | `LOG_REDACT_KEYS` | redaction paths | `context.token,data.password` |
 | `LOG_SAMPLE_RATE` | 0..1 | `0.25` |
 

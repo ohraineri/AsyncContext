@@ -302,6 +302,21 @@ describe("config helpers", () => {
     expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
   });
 
+  it("accepts context keys as JSON array", () => {
+    const env = {
+      LOG_CONTEXT_KEYS: '["requestId", "tenantId"]',
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
+  });
+
+  it("warns on invalid context keys JSON", () => {
+    const env = { LOG_CONTEXT_KEYS: '["requestId"' } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_CONTEXT_KEYS");
+  });
+
   it("parses redact field names list", () => {
     const env = { LOG_REDACT_FIELDS: "token, ssn" } as NodeJS.ProcessEnv;
     const { options } = resolveLoggerEnv({ env });
