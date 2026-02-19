@@ -153,6 +153,49 @@ function parseJsonObjectEnv(
   }
 }
 
+function coercePrimitive(value: string): string | number | boolean {
+  const normalized = value.trim();
+  if (!normalized) return "";
+  const lower = normalized.toLowerCase();
+  if (lower === "true") return true;
+  if (lower === "false") return false;
+  const asNumber = Number(normalized);
+  if (Number.isFinite(asNumber)) return asNumber;
+  return normalized;
+}
+
+function parseKeyValueEnv(value: string): Record<string, unknown> | undefined {
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  if (entries.length === 0) return {};
+
+  const parsed: Record<string, unknown> = {};
+  for (const entry of entries) {
+    const separatorIndex = entry.indexOf("=");
+    if (separatorIndex <= 0) return undefined;
+    const key = entry.slice(0, separatorIndex).trim();
+    const rawValue = entry.slice(separatorIndex + 1).trim();
+    if (!key) return undefined;
+    parsed[key] = coercePrimitive(rawValue);
+  }
+
+  return parsed;
+}
+
+function parseBindingsEnv(
+  value: string | undefined
+): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return {};
+  if (trimmed.startsWith("{")) {
+    return parseJsonObjectEnv(value);
+  }
+  return parseKeyValueEnv(trimmed);
+}
+
 /**
  * Parses a log level from an env value.
  *
@@ -306,11 +349,17 @@ export function resolveLoggerEnv(
   if (name) resolved.name = name;
 
   const bindingsEntry = pickEnvEntry(env, ["LOG_BINDINGS"]);
-  const bindings = parseJsonObjectEnv(bindingsEntry?.value);
+  const bindings = parseBindingsEnv(bindingsEntry?.value);
   if (bindingsEntry && bindings === undefined) {
-    warnInvalid(warnings, bindingsEntry, "Invalid bindings. Use JSON object.");
+    warnInvalid(
+      warnings,
+      bindingsEntry,
+      "Invalid bindings. Use JSON object or key=value pairs."
+    );
   }
-  if (bindings !== undefined) resolved.bindings = bindings;
+  if (bindings !== undefined) {
+    resolved.bindings = { ...(resolved.bindings ?? {}), ...bindings };
+  }
 
   const levelEntry = pickEnvEntry(env, ["LOG_LEVEL", "LOGLEVEL", "LOGGER_LEVEL"]);
   const level = parseLogLevelEnv(levelEntry?.value);

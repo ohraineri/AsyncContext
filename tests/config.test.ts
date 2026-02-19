@@ -277,6 +277,38 @@ describe("config helpers", () => {
     expect(keys).toContain("LOG_BINDINGS");
   });
 
+  it("parses LOG_BINDINGS key=value pairs", () => {
+    const env = {
+      LOG_BINDINGS: "service=api,version=2,debug=true",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.bindings).toEqual({
+      service: "api",
+      version: 2,
+      debug: true,
+    });
+  });
+
+  it("merges LOG_BINDINGS with defaults", () => {
+    const env = { LOG_BINDINGS: "service=api,version=2" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({
+      env,
+      defaults: { bindings: { env: "prod", version: 1 } },
+    });
+    expect(options.bindings).toEqual({
+      env: "prod",
+      version: 2,
+      service: "api",
+    });
+  });
+
+  it("warns on invalid LOG_BINDINGS key=value input", () => {
+    const env = { LOG_BINDINGS: "service" } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_BINDINGS");
+  });
+
   it("merges defaults when env missing", () => {
     const { options } = resolveLoggerEnv({
       env: {},
