@@ -175,4 +175,8 @@ describe("config helpers", () => {
   it("handles trailing csv commas", () => {
     expect(parseCsvEnv("a,b,")).toEqual(["a", "b"]);
   });
+
+  it("handles spaced csv entries", () => {
+    expect(parseCsvEnv(" a , b , c ")).toEqual(["a", "b", "c"]);
+  });
 });
