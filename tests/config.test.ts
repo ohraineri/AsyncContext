@@ -191,4 +191,8 @@ describe("config helpers", () => {
   it("normalizes Fatal log level", () => {
     expect(parseLogLevelEnv("Fatal")).toBe("fatal");
   });
+
+  it("parses log level with whitespace", () => {
+    expect(parseLogLevelEnv(" info ")).toBe("info");
+  });
 });
