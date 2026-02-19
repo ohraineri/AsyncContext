@@ -195,4 +195,8 @@ describe("config helpers", () => {
   it("parses log level with whitespace", () => {
     expect(parseLogLevelEnv(" info ")).toBe("info");
   });
+
+  it("parses warn log level", () => {
+    expect(parseLogLevelEnv("Warn")).toBe("warn");
+  });
 });
