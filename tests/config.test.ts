@@ -199,4 +199,8 @@ describe("config helpers", () => {
   it("parses warn log level", () => {
     expect(parseLogLevelEnv("Warn")).toBe("warn");
   });
+
+  it("returns undefined for empty log level", () => {
+    expect(parseLogLevelEnv("")).toBeUndefined();
+  });
 });
