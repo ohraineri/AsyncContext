@@ -179,4 +179,8 @@ describe("config helpers", () => {
   it("handles spaced csv entries", () => {
     expect(parseCsvEnv(" a , b , c ")).toEqual(["a", "b", "c"]);
   });
+
+  it("filters repeated csv separators", () => {
+    expect(parseCsvEnv("a, , ,b")).toEqual(["a", "b"]);
+  });
 });
