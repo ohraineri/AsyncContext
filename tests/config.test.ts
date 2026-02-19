@@ -171,4 +171,8 @@ describe("config helpers", () => {
   it("drops empty csv entries", () => {
     expect(parseCsvEnv("a,,b")).toEqual(["a", "b"]);
   });
+
+  it("handles trailing csv commas", () => {
+    expect(parseCsvEnv("a,b,")).toEqual(["a", "b"]);
+  });
 });
