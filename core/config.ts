@@ -339,7 +339,15 @@ export function resolveLoggerEnv(
   }
   if (contextKeys !== undefined) resolved.contextKeys = contextKeys;
 
-  const redactKeys = parseCsvEnv(pickEnv(env, ["LOG_REDACT_KEYS"]));
+  const redactKeysEntry = pickEnvEntry(env, ["LOG_REDACT_KEYS"]);
+  const redactKeys = parseListEnv(redactKeysEntry?.value);
+  if (redactKeysEntry && redactKeys === undefined) {
+    warnInvalid(
+      warnings,
+      redactKeysEntry,
+      "Invalid list. Use comma-separated values or JSON array."
+    );
+  }
   if (redactKeys !== undefined) resolved.redactKeys = redactKeys;
 
   const redactDefaultsEntry = pickEnvEntry(env, ["LOG_REDACT_DEFAULTS"]);

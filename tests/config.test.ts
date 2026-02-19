@@ -336,6 +336,19 @@ describe("config helpers", () => {
     expect(keys).toContain("LOG_REDACT_FIELDS");
   });
 
+  it("accepts redact keys as JSON array", () => {
+    const env = { LOG_REDACT_KEYS: "[\"ctx.token\", \"data.password\"]" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.redactKeys).toEqual(["ctx.token", "data.password"]);
+  });
+
+  it("warns on invalid redact keys JSON", () => {
+    const env = { LOG_REDACT_KEYS: "[\"ctx.token\"" } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_REDACT_KEYS");
+  });
+
   it("clamps sample rate above 1", () => {
     const env = { LOG_SAMPLE_RATE: "5" } as NodeJS.ProcessEnv;
     const { options, warnings } = resolveLoggerEnv({ env });

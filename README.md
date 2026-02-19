@@ -203,7 +203,7 @@ Environment variables:
 | `LOG_CONTEXT` | Attach async context | `true` |
 | `LOG_CONTEXT_KEY` | Key name for context | `ctx` |
 | `LOG_CONTEXT_KEYS` | Comma-separated or JSON array allowlist | `requestId,tenantId` |
-| `LOG_REDACT_KEYS` | Comma-separated redaction paths | `ctx.token,data.password` |
+| `LOG_REDACT_KEYS` | Redaction paths (CSV or JSON array) | `ctx.token,data.password` |
 | `LOG_REDACT_DEFAULTS` | Enable default sensitive-field redaction | `true` |
 | `LOG_REDACT_FIELDS` | Extra sensitive field names (CSV or JSON array) | `accessToken,creditCard` |
 | `LOG_REDACT_PLACEHOLDER` | Mask value placeholder | `[REDACTED]` |
