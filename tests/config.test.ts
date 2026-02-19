@@ -187,4 +187,8 @@ describe("config helpers", () => {
   it("normalizes ERROR log level", () => {
     expect(parseLogLevelEnv("ERROR")).toBe("error");
   });
+
+  it("normalizes Fatal log level", () => {
+    expect(parseLogLevelEnv("Fatal")).toBe("fatal");
+  });
 });
