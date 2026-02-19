@@ -167,4 +167,8 @@ describe("config helpers", () => {
   it("parses single csv item", () => {
     expect(parseCsvEnv("solo")).toEqual(["solo"]);
   });
+
+  it("drops empty csv entries", () => {
+    expect(parseCsvEnv("a,,b")).toEqual(["a", "b"]);
+  });
 });
