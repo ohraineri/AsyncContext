@@ -163,4 +163,8 @@ describe("config helpers", () => {
   it("parses numbers with whitespace", () => {
     expect(parseNumberEnv(" 2 ")).toBe(2);
   });
+
+  it("parses single csv item", () => {
+    expect(parseCsvEnv("solo")).toEqual(["solo"]);
+  });
 });
