@@ -258,6 +258,25 @@ describe("config helpers", () => {
     expect(options.name).toBe("service");
   });
 
+  it("parses LOG_BINDINGS JSON object", () => {
+    const env = {
+      LOG_BINDINGS: "{\"service\":\"api\",\"version\":2,\"flags\":{\"canary\":true}}",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.bindings).toEqual({
+      service: "api",
+      version: 2,
+      flags: { canary: true },
+    });
+  });
+
+  it("warns on invalid LOG_BINDINGS JSON", () => {
+    const env = { LOG_BINDINGS: "[\"api\"]" } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_BINDINGS");
+  });
+
   it("merges defaults when env missing", () => {
     const { options } = resolveLoggerEnv({
       env: {},

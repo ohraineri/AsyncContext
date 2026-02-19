@@ -211,6 +211,7 @@ Environment variables:
 | `LOG_INCLUDE_PID` | Include process id | `true` |
 | `LOG_INCLUDE_HOSTNAME` | Include hostname | `false` |
 | `LOG_TIMESTAMP` | Include timestamp | `true` |
+| `LOG_BINDINGS` | JSON object added to every log entry | `{"service":"api","version":2}` |
 | `LOG_NAME` | Logger name | `api` |
 
 ## Framework integrations

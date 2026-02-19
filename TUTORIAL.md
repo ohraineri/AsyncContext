@@ -241,6 +241,7 @@ Key variables:
 | `LOG_CONTEXT_KEYS` | allowlist keys (CSV or JSON array) | `requestId,tenantId` |
 | `LOG_REDACT_KEYS` | redaction paths (CSV or JSON array) | `context.token,data.password` |
 | `LOG_REDACT_FIELDS` | extra sensitive fields (CSV or JSON array) | `accessToken,creditCard` |
+| `LOG_BINDINGS` | JSON object added to every log entry | `{"service":"api","version":2}` |
 | `LOG_SAMPLE_RATE` | 0..1 | `0.25` |
 
 ## 9. Performance measurement

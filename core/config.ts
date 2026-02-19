@@ -133,6 +133,26 @@ function parseListEnv(value: string | undefined): string[] | undefined {
   return parseCsvEnv(value);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parseJsonObjectEnv(
+  value: string | undefined
+): Record<string, unknown> | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return {};
+  if (!trimmed.startsWith("{")) return undefined;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (!isRecord(parsed)) return undefined;
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Parses a log level from an env value.
  *
@@ -284,6 +304,13 @@ export function resolveLoggerEnv(
 
   const name = options.name ?? pickEnv(env, ["LOG_NAME", "LOGGER_NAME"]);
   if (name) resolved.name = name;
+
+  const bindingsEntry = pickEnvEntry(env, ["LOG_BINDINGS"]);
+  const bindings = parseJsonObjectEnv(bindingsEntry?.value);
+  if (bindingsEntry && bindings === undefined) {
+    warnInvalid(warnings, bindingsEntry, "Invalid bindings. Use JSON object.");
+  }
+  if (bindings !== undefined) resolved.bindings = bindings;
 
   const levelEntry = pickEnvEntry(env, ["LOG_LEVEL", "LOGLEVEL", "LOGGER_LEVEL"]);
   const level = parseLogLevelEnv(levelEntry?.value);
