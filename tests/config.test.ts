@@ -183,4 +183,8 @@ describe("config helpers", () => {
   it("filters repeated csv separators", () => {
     expect(parseCsvEnv("a, , ,b")).toEqual(["a", "b"]);
   });
+
+  it("normalizes ERROR log level", () => {
+    expect(parseLogLevelEnv("ERROR")).toBe("error");
+  });
 });
