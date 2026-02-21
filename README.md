@@ -207,7 +207,7 @@ Environment variables:
 | `LOG_REDACT_DEFAULTS` | Enable default sensitive-field redaction | `true` |
 | `LOG_REDACT_FIELDS` | Extra sensitive field names (CSV or JSON array) | `accessToken,creditCard` |
 | `LOG_REDACT_PLACEHOLDER` | Mask value placeholder | `[REDACTED]` |
-| `LOG_SAMPLE_RATE` | 0..1 sampling | `0.25` |
+| `LOG_SAMPLE_RATE` | 0..1 or percent sampling | `0.25` |
 | `LOG_INCLUDE_PID` | Include process id | `true` |
 | `LOG_INCLUDE_HOSTNAME` | Include hostname | `false` |
 | `LOG_TIMESTAMP` | Include timestamp | `true` |

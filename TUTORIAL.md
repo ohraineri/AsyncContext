@@ -242,7 +242,7 @@ Key variables:
 | `LOG_REDACT_KEYS` | redaction paths (CSV or JSON array) | `context.token,data.password` |
 | `LOG_REDACT_FIELDS` | extra sensitive fields (CSV or JSON array) | `accessToken,creditCard` |
 | `LOG_BINDINGS` | JSON object or key=value pairs added to every log entry | `{"service":"api","version":2}` |
-| `LOG_SAMPLE_RATE` | 0..1 | `0.25` |
+| `LOG_SAMPLE_RATE` | 0..1 or percent | `0.25` |
 
 You can also use `LOGGER_` aliases (for example `LOGGER_LEVEL`) for every `LOG_` variable.
 

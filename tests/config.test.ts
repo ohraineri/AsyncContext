@@ -429,7 +429,7 @@ describe("config helpers", () => {
   });
 
   it("clamps sample rate above 1", () => {
-    const env = { LOG_SAMPLE_RATE: "5" } as NodeJS.ProcessEnv;
+    const env = { LOG_SAMPLE_RATE: "150" } as NodeJS.ProcessEnv;
     const { options, warnings } = resolveLoggerEnv({ env });
     expect(options.sampleRate).toBe(1);
     expect(warnings.some((warning) => warning.key === "LOG_SAMPLE_RATE")).toBe(
@@ -444,6 +444,18 @@ describe("config helpers", () => {
     expect(warnings.some((warning) => warning.key === "LOG_SAMPLE_RATE")).toBe(
       true
     );
+  });
+
+  it("parses sample rate percent values", () => {
+    const env = { LOG_SAMPLE_RATE: "25%" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.sampleRate).toBe(0.25);
+  });
+
+  it("parses integer sample rate as percent", () => {
+    const env = { LOG_SAMPLE_RATE: "25" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.sampleRate).toBe(0.25);
   });
 
   it("warns on invalid include pid value", () => {

@@ -91,6 +91,29 @@ export function parseNumberEnv(value: string | undefined): number | undefined {
   return parsed;
 }
 
+function isIntegerString(value: string): boolean {
+  return /^[0-9]+$/.test(value);
+}
+
+function parseSampleRateEnv(value: string | undefined): number | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  let raw = trimmed;
+  let isPercent = false;
+  if (trimmed.endsWith("%")) {
+    isPercent = true;
+    raw = trimmed.slice(0, -1).trim();
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) return undefined;
+  if (isPercent) return parsed / 100;
+  if (parsed > 1 && parsed <= 100 && isIntegerString(raw)) {
+    return parsed / 100;
+  }
+  return parsed;
+}
+
 /**
  * Parses a comma-separated env value into an array.
  *
@@ -482,12 +505,12 @@ export function resolveLoggerEnv(
     "LOG_SAMPLE_RATE",
     "LOGGER_SAMPLE_RATE",
   ]);
-  const sampleRate = parseNumberEnv(sampleRateEntry?.value);
+  const sampleRate = parseSampleRateEnv(sampleRateEntry?.value);
   if (sampleRateEntry && sampleRate === undefined) {
     warnInvalid(
       warnings,
       sampleRateEntry,
-      "Invalid number. Use a value between 0 and 1."
+      "Invalid number. Use 0..1 or percent (25 or 25%)."
     );
   }
   if (sampleRate !== undefined) {
