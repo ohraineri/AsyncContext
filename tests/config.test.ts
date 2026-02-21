@@ -227,4 +227,8 @@ describe("config helpers", () => {
   it("exposes production preset hostname", () => {
     expect(loggerPreset("production").includeHostname).toBe(true);
   });
+
+  it("exposes development preset colors", () => {
+    expect(loggerPreset("development").colors).toBe(true);
+  });
 });
