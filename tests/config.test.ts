@@ -207,4 +207,8 @@ describe("config helpers", () => {
   it("parses json log format with whitespace", () => {
     expect(parseLogFormatEnv(" JSON ")).toBe("json");
   });
+
+  it("parses pretty log format with whitespace", () => {
+    expect(parseLogFormatEnv(" pretty ")).toBe("pretty");
+  });
 });
