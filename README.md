@@ -214,6 +214,8 @@ Environment variables:
 | `LOG_BINDINGS` | JSON object or key=value pairs added to every log entry | `{"service":"api","version":2}` |
 | `LOG_NAME` | Logger name | `api` |
 
+All `LOG_` variables also accept `LOGGER_` aliases (for example `LOGGER_LEVEL`).
+
 ## Framework integrations
 
 ### Express

@@ -309,6 +309,34 @@ describe("config helpers", () => {
     expect(keys).toContain("LOG_BINDINGS");
   });
 
+  it("supports LOGGER_ aliases", () => {
+    const env = {
+      LOGGER_LEVEL: "warn",
+      LOGGER_FORMAT: "json",
+      LOGGER_CONTEXT: "false",
+      LOGGER_BINDINGS: "{\"service\":\"api\"}",
+    } as NodeJS.ProcessEnv;
+
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.level).toBe("warn");
+    expect(options.format).toBe("json");
+    expect(options.context).toBe(false);
+    expect(options.bindings).toEqual({ service: "api" });
+  });
+
+  it("prefers LOG_ values over LOGGER_ aliases", () => {
+    const env = {
+      LOG_LEVEL: "error",
+      LOGGER_LEVEL: "debug",
+      LOG_FORMAT: "pretty",
+      LOGGER_FORMAT: "json",
+    } as NodeJS.ProcessEnv;
+
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.level).toBe("error");
+    expect(options.format).toBe("pretty");
+  });
+
   it("merges defaults when env missing", () => {
     const { options } = resolveLoggerEnv({
       env: {},

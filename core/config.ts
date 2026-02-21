@@ -331,7 +331,7 @@ export function resolveLoggerEnv(
   const env = options.env ?? process.env;
   const warnings: LoggerEnvWarning[] = [];
 
-  const presetEntry = pickEnvEntry(env, ["LOG_PRESET"]);
+  const presetEntry = pickEnvEntry(env, ["LOG_PRESET", "LOGGER_PRESET"]);
   const presetName = parseLoggerPresetEnv(presetEntry?.value);
   if (presetEntry && !presetName) {
     warnInvalid(
@@ -348,7 +348,7 @@ export function resolveLoggerEnv(
   const name = options.name ?? pickEnv(env, ["LOG_NAME", "LOGGER_NAME"]);
   if (name) resolved.name = name;
 
-  const bindingsEntry = pickEnvEntry(env, ["LOG_BINDINGS"]);
+  const bindingsEntry = pickEnvEntry(env, ["LOG_BINDINGS", "LOGGER_BINDINGS"]);
   const bindings = parseBindingsEnv(bindingsEntry?.value);
   if (bindingsEntry && bindings === undefined) {
     warnInvalid(
@@ -361,7 +361,12 @@ export function resolveLoggerEnv(
     resolved.bindings = { ...(resolved.bindings ?? {}), ...bindings };
   }
 
-  const levelEntry = pickEnvEntry(env, ["LOG_LEVEL", "LOGLEVEL", "LOGGER_LEVEL"]);
+  const levelEntry = pickEnvEntry(env, [
+    "LOG_LEVEL",
+    "LOGLEVEL",
+    "LOGGER_LEVEL",
+    "LOGGER_LOGLEVEL",
+  ]);
   const level = parseLogLevelEnv(levelEntry?.value);
   if (levelEntry && !level) {
     warnInvalid(
@@ -372,14 +377,19 @@ export function resolveLoggerEnv(
   }
   if (level) resolved.level = level;
 
-  const formatEntry = pickEnvEntry(env, ["LOG_FORMAT"]);
+  const formatEntry = pickEnvEntry(env, ["LOG_FORMAT", "LOGGER_FORMAT"]);
   const format = parseLogFormatEnv(formatEntry?.value);
   if (formatEntry && !format) {
     warnInvalid(warnings, formatEntry, "Invalid format. Use json or pretty.");
   }
   if (format) resolved.format = format;
 
-  const colorsEntry = pickEnvEntry(env, ["LOG_COLORS", "LOG_COLOURS"]);
+  const colorsEntry = pickEnvEntry(env, [
+    "LOG_COLORS",
+    "LOG_COLOURS",
+    "LOGGER_COLORS",
+    "LOGGER_COLOURS",
+  ]);
   const colors = parseBooleanEnv(colorsEntry?.value);
   if (colorsEntry && colors === undefined) {
     warnInvalid(
@@ -390,7 +400,7 @@ export function resolveLoggerEnv(
   }
   if (colors !== undefined) resolved.colors = colors;
 
-  const contextEntry = pickEnvEntry(env, ["LOG_CONTEXT"]);
+  const contextEntry = pickEnvEntry(env, ["LOG_CONTEXT", "LOGGER_CONTEXT"]);
   const context = parseBooleanEnv(contextEntry?.value);
   if (contextEntry && context === undefined) {
     warnInvalid(
@@ -401,10 +411,13 @@ export function resolveLoggerEnv(
   }
   if (context !== undefined) resolved.context = context;
 
-  const contextKey = pickEnv(env, ["LOG_CONTEXT_KEY"]);
+  const contextKey = pickEnv(env, ["LOG_CONTEXT_KEY", "LOGGER_CONTEXT_KEY"]);
   if (contextKey) resolved.contextKey = contextKey;
 
-  const contextKeysEntry = pickEnvEntry(env, ["LOG_CONTEXT_KEYS"]);
+  const contextKeysEntry = pickEnvEntry(env, [
+    "LOG_CONTEXT_KEYS",
+    "LOGGER_CONTEXT_KEYS",
+  ]);
   const contextKeys = parseListEnv(contextKeysEntry?.value);
   if (contextKeysEntry && contextKeys === undefined) {
     warnInvalid(
@@ -415,7 +428,10 @@ export function resolveLoggerEnv(
   }
   if (contextKeys !== undefined) resolved.contextKeys = contextKeys;
 
-  const redactKeysEntry = pickEnvEntry(env, ["LOG_REDACT_KEYS"]);
+  const redactKeysEntry = pickEnvEntry(env, [
+    "LOG_REDACT_KEYS",
+    "LOGGER_REDACT_KEYS",
+  ]);
   const redactKeys = parseListEnv(redactKeysEntry?.value);
   if (redactKeysEntry && redactKeys === undefined) {
     warnInvalid(
@@ -426,7 +442,10 @@ export function resolveLoggerEnv(
   }
   if (redactKeys !== undefined) resolved.redactKeys = redactKeys;
 
-  const redactDefaultsEntry = pickEnvEntry(env, ["LOG_REDACT_DEFAULTS"]);
+  const redactDefaultsEntry = pickEnvEntry(env, [
+    "LOG_REDACT_DEFAULTS",
+    "LOGGER_REDACT_DEFAULTS",
+  ]);
   const redactDefaults = parseBooleanEnv(redactDefaultsEntry?.value);
   if (redactDefaultsEntry && redactDefaults === undefined) {
     warnInvalid(
@@ -437,7 +456,10 @@ export function resolveLoggerEnv(
   }
   if (redactDefaults !== undefined) resolved.redactDefaults = redactDefaults;
 
-  const redactFieldNamesEntry = pickEnvEntry(env, ["LOG_REDACT_FIELDS"]);
+  const redactFieldNamesEntry = pickEnvEntry(env, [
+    "LOG_REDACT_FIELDS",
+    "LOGGER_REDACT_FIELDS",
+  ]);
   const redactFieldNames = parseListEnv(redactFieldNamesEntry?.value);
   if (redactFieldNamesEntry && redactFieldNames === undefined) {
     warnInvalid(
@@ -450,10 +472,16 @@ export function resolveLoggerEnv(
     resolved.redactFieldNames = redactFieldNames;
   }
 
-  const redactPlaceholder = pickEnv(env, ["LOG_REDACT_PLACEHOLDER"]);
+  const redactPlaceholder = pickEnv(env, [
+    "LOG_REDACT_PLACEHOLDER",
+    "LOGGER_REDACT_PLACEHOLDER",
+  ]);
   if (redactPlaceholder) resolved.redactPlaceholder = redactPlaceholder;
 
-  const sampleRateEntry = pickEnvEntry(env, ["LOG_SAMPLE_RATE"]);
+  const sampleRateEntry = pickEnvEntry(env, [
+    "LOG_SAMPLE_RATE",
+    "LOGGER_SAMPLE_RATE",
+  ]);
   const sampleRate = parseNumberEnv(sampleRateEntry?.value);
   if (sampleRateEntry && sampleRate === undefined) {
     warnInvalid(
@@ -474,7 +502,10 @@ export function resolveLoggerEnv(
     resolved.sampleRate = clamped;
   }
 
-  const includePidEntry = pickEnvEntry(env, ["LOG_INCLUDE_PID"]);
+  const includePidEntry = pickEnvEntry(env, [
+    "LOG_INCLUDE_PID",
+    "LOGGER_INCLUDE_PID",
+  ]);
   const includePid = parseBooleanEnv(includePidEntry?.value);
   if (includePidEntry && includePid === undefined) {
     warnInvalid(
@@ -485,7 +516,10 @@ export function resolveLoggerEnv(
   }
   if (includePid !== undefined) resolved.includePid = includePid;
 
-  const includeHostnameEntry = pickEnvEntry(env, ["LOG_INCLUDE_HOSTNAME"]);
+  const includeHostnameEntry = pickEnvEntry(env, [
+    "LOG_INCLUDE_HOSTNAME",
+    "LOGGER_INCLUDE_HOSTNAME",
+  ]);
   const includeHostname = parseBooleanEnv(includeHostnameEntry?.value);
   if (includeHostnameEntry && includeHostname === undefined) {
     warnInvalid(
@@ -496,7 +530,7 @@ export function resolveLoggerEnv(
   }
   if (includeHostname !== undefined) resolved.includeHostname = includeHostname;
 
-  const timestampEntry = pickEnvEntry(env, ["LOG_TIMESTAMP"]);
+  const timestampEntry = pickEnvEntry(env, ["LOG_TIMESTAMP", "LOGGER_TIMESTAMP"]);
   const timestamp = parseBooleanEnv(timestampEntry?.value);
   if (timestampEntry && timestamp === undefined) {
     warnInvalid(
