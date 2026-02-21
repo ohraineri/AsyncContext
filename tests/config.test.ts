@@ -203,4 +203,8 @@ describe("config helpers", () => {
   it("returns undefined for empty log level", () => {
     expect(parseLogLevelEnv("")).toBeUndefined();
   });
+
+  it("parses json log format with whitespace", () => {
+    expect(parseLogFormatEnv(" JSON ")).toBe("json");
+  });
 });
