@@ -237,4 +237,14 @@ describe("config helpers", () => {
     expect(preset.includePid).toBe(false);
     expect(preset.timestamp).toBe(false);
   });
+
+  it("prefers LOG_NAME over LOGGER_NAME", () => {
+    const env = {
+      LOG_NAME: "api",
+      LOGGER_NAME: "ignored",
+    } as NodeJS.ProcessEnv;
+
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.name).toBe("api");
+  });
 });
