@@ -219,4 +219,8 @@ describe("config helpers", () => {
   it("parses production preset with whitespace", () => {
     expect(parseLoggerPresetEnv("  production ")).toBe("production");
   });
+
+  it("parses test preset in uppercase", () => {
+    expect(parseLoggerPresetEnv("TEST")).toBe("test");
+  });
 });
