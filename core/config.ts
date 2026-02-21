@@ -29,6 +29,15 @@ const LOG_LEVELS: LogLevel[] = [
   "fatal",
 ];
 
+const LOG_LEVEL_NUMBERS: Record<number, LogLevel> = {
+  10: "trace",
+  20: "debug",
+  30: "info",
+  40: "warn",
+  50: "error",
+  60: "fatal",
+};
+
 type EnvEntry = { key: string; value: string };
 
 /**
@@ -236,6 +245,10 @@ export function parseLogLevelEnv(
   if (normalized === "err") normalized = "error";
   if (LOG_LEVELS.includes(normalized as LogLevel)) {
     return normalized as LogLevel;
+  }
+  const numericLevel = Number(normalized);
+  if (Number.isInteger(numericLevel) && LOG_LEVEL_NUMBERS[numericLevel]) {
+    return LOG_LEVEL_NUMBERS[numericLevel];
   }
   return undefined;
 }

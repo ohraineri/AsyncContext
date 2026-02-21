@@ -234,7 +234,7 @@ Key variables:
 | Variable | Description | Example |
 | --- | --- | --- |
 | `LOG_PRESET` | `development`, `production`, `test` | `production` |
-| `LOG_LEVEL` | minimum level | `info` |
+| `LOG_LEVEL` | minimum level (name or numeric) | `info` |
 | `LOG_FORMAT` | `json` or `pretty` | `json` |
 | `LOG_CONTEXT` | attach context | `true` |
 | `LOG_CONTEXT_KEY` | context key name | `context` |

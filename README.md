@@ -197,7 +197,7 @@ Environment variables:
 | Variable | Description | Example |
 | --- | --- | --- |
 | `LOG_PRESET` | `development`, `production`, or `test` preset | `production` |
-| `LOG_LEVEL` | Minimum log level | `info` |
+| `LOG_LEVEL` | Minimum log level (name or numeric) | `info` |
 | `LOG_FORMAT` | `json` or `pretty` | `json` |
 | `LOG_COLORS` | Enable ANSI colors | `true` |
 | `LOG_CONTEXT` | Attach async context | `true` |

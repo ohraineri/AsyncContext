@@ -200,6 +200,17 @@ describe("config helpers", () => {
     expect(parseLogLevelEnv("Warn")).toBe("warn");
   });
 
+  it("parses numeric log levels", () => {
+    expect(parseLogLevelEnv("30")).toBe("info");
+    expect(parseLogLevelEnv("50")).toBe("error");
+  });
+
+  it("accepts numeric LOG_LEVEL in env", () => {
+    const env = { LOG_LEVEL: "20" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.level).toBe("debug");
+  });
+
   it("returns undefined for empty log level", () => {
     expect(parseLogLevelEnv("")).toBeUndefined();
   });
