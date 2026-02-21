@@ -231,4 +231,10 @@ describe("config helpers", () => {
   it("exposes development preset colors", () => {
     expect(loggerPreset("development").colors).toBe(true);
   });
+
+  it("exposes test preset defaults", () => {
+    const preset = loggerPreset("test");
+    expect(preset.includePid).toBe(false);
+    expect(preset.timestamp).toBe(false);
+  });
 });
