@@ -223,4 +223,8 @@ describe("config helpers", () => {
   it("parses test preset in uppercase", () => {
     expect(parseLoggerPresetEnv("TEST")).toBe("test");
   });
+
+  it("exposes production preset hostname", () => {
+    expect(loggerPreset("production").includeHostname).toBe(true);
+  });
 });
