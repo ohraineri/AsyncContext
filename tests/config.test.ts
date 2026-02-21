@@ -215,4 +215,8 @@ describe("config helpers", () => {
   it("returns undefined for empty log format", () => {
     expect(parseLogFormatEnv("")).toBeUndefined();
   });
+
+  it("parses production preset with whitespace", () => {
+    expect(parseLoggerPresetEnv("  production ")).toBe("production");
+  });
 });
