@@ -211,4 +211,8 @@ describe("config helpers", () => {
   it("parses pretty log format with whitespace", () => {
     expect(parseLogFormatEnv(" pretty ")).toBe("pretty");
   });
+
+  it("returns undefined for empty log format", () => {
+    expect(parseLogFormatEnv("")).toBeUndefined();
+  });
 });
