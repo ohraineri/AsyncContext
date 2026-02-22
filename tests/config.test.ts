@@ -307,4 +307,13 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.redactFieldNames).toEqual(["token", "ssn"]);
   });
+
+  it("clamps sample rate above 1", () => {
+    const env = { LOG_SAMPLE_RATE: "5" } as NodeJS.ProcessEnv;
+    const { options, warnings } = resolveLoggerEnv({ env });
+    expect(options.sampleRate).toBe(1);
+    expect(warnings.some((warning) => warning.key === "LOG_SAMPLE_RATE")).toBe(
+      true
+    );
+  });
 });
