@@ -325,4 +325,11 @@ describe("config helpers", () => {
       true
     );
   });
+
+  it("warns on invalid include pid value", () => {
+    const env = { LOG_INCLUDE_PID: "maybe" } as NodeJS.ProcessEnv;
+    const { warnings } = resolveLoggerEnv({ env });
+    const keys = warnings.map((warning) => warning.key);
+    expect(keys).toContain("LOG_INCLUDE_PID");
+  });
 });
