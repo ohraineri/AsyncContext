@@ -246,6 +246,7 @@ Key variables:
 
 You can also use `LOGGER_` aliases (for example `LOGGER_LEVEL`) for every `LOG_` variable.
 CSV list values accept commas or semicolons as separators.
+List env values are de-duplicated while preserving order.
 
 ## 9. Performance measurement
 

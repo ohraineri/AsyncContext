@@ -159,10 +159,23 @@ function parseListEnv(value: string | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return [];
+  const dedupe = (items: string[]) => {
+    const seen = new Set<string>();
+    const output: string[] = [];
+    for (const item of items) {
+      const normalized = item.trim();
+      if (!normalized || seen.has(normalized)) continue;
+      seen.add(normalized);
+      output.push(normalized);
+    }
+    return output;
+  };
   if (trimmed.startsWith("[")) {
-    return parseJsonArrayEnv(value);
+    const parsed = parseJsonArrayEnv(value);
+    return parsed ? dedupe(parsed) : parsed;
   }
-  return parseCsvEnv(value);
+  const parsed = parseCsvEnv(value);
+  return parsed ? dedupe(parsed) : parsed;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

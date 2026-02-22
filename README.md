@@ -216,6 +216,7 @@ Environment variables:
 
 All `LOG_` variables also accept `LOGGER_` aliases (for example `LOGGER_LEVEL`).
 CSV list values accept commas or semicolons as separators.
+List env values are de-duplicated while preserving order.
 
 ## Framework integrations
 

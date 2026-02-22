@@ -417,6 +417,14 @@ describe("config helpers", () => {
     expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
   });
 
+  it("dedupes context keys", () => {
+    const env = {
+      LOG_CONTEXT_KEYS: "requestId,requestId,tenantId,requestId",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
+  });
+
   it("parses redact field names list", () => {
     const env = { LOG_REDACT_FIELDS: "token, ssn" } as NodeJS.ProcessEnv;
     const { options } = resolveLoggerEnv({ env });
@@ -436,6 +444,14 @@ describe("config helpers", () => {
     expect(keys).toContain("LOG_REDACT_FIELDS");
   });
 
+  it("dedupes redact field names", () => {
+    const env = {
+      LOG_REDACT_FIELDS: "token,ssn,token,ssn",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.redactFieldNames).toEqual(["token", "ssn"]);
+  });
+
   it("accepts redact keys as JSON array", () => {
     const env = { LOG_REDACT_KEYS: "[\"ctx.token\", \"data.password\"]" } as NodeJS.ProcessEnv;
     const { options } = resolveLoggerEnv({ env });
@@ -447,6 +463,14 @@ describe("config helpers", () => {
     const { warnings } = resolveLoggerEnv({ env });
     const keys = warnings.map((warning) => warning.key);
     expect(keys).toContain("LOG_REDACT_KEYS");
+  });
+
+  it("dedupes redact keys", () => {
+    const env = {
+      LOG_REDACT_KEYS: "ctx.token,ctx.token,data.password",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.redactKeys).toEqual(["ctx.token", "data.password"]);
   });
 
   it("clamps sample rate above 1", () => {
