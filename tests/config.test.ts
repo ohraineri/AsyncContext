@@ -316,4 +316,13 @@ describe("config helpers", () => {
       true
     );
   });
+
+  it("clamps sample rate below 0", () => {
+    const env = { LOG_SAMPLE_RATE: "-0.5" } as NodeJS.ProcessEnv;
+    const { options, warnings } = resolveLoggerEnv({ env });
+    expect(options.sampleRate).toBe(0);
+    expect(warnings.some((warning) => warning.key === "LOG_SAMPLE_RATE")).toBe(
+      true
+    );
+  });
 });
