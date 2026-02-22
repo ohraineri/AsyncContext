@@ -301,4 +301,10 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
   });
+
+  it("parses redact field names list", () => {
+    const env = { LOG_REDACT_FIELDS: "token, ssn" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.redactFieldNames).toEqual(["token", "ssn"]);
+  });
 });
