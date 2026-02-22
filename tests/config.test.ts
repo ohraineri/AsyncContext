@@ -266,4 +266,19 @@ describe("config helpers", () => {
     expect(options.level).toBe("debug");
     expect(options.format).toBe("pretty");
   });
+
+  it("overrides defaults with env values", () => {
+    const env = {
+      LOG_LEVEL: "error",
+      LOG_FORMAT: "json",
+    } as NodeJS.ProcessEnv;
+
+    const { options } = resolveLoggerEnv({
+      env,
+      defaults: { level: "info", format: "pretty" },
+    });
+
+    expect(options.level).toBe("error");
+    expect(options.format).toBe("json");
+  });
 });
