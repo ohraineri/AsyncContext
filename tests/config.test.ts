@@ -293,4 +293,12 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.colors).toBe(true);
   });
+
+  it("parses context keys list", () => {
+    const env = {
+      LOG_CONTEXT_KEYS: "requestId, tenantId",
+    } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
+  });
 });
