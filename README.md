@@ -215,6 +215,7 @@ Environment variables:
 | `LOG_NAME` | Logger name | `api` |
 
 All `LOG_` variables also accept `LOGGER_` aliases (for example `LOGGER_LEVEL`).
+CSV list values accept commas or semicolons as separators.
 
 ## Framework integrations
 

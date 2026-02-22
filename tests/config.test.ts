@@ -37,6 +37,10 @@ describe("config helpers", () => {
     expect(parseCsvEnv(undefined)).toBeUndefined();
   });
 
+  it("parses csv with semicolons", () => {
+    expect(parseCsvEnv("a;b;c")).toEqual(["a", "b", "c"]);
+  });
+
   it("parses log levels and formats", () => {
     expect(parseLogLevelEnv("WARN")).toBe("warn");
     expect(parseLogLevelEnv("warning")).toBe("warn");
@@ -405,6 +409,12 @@ describe("config helpers", () => {
     const { warnings } = resolveLoggerEnv({ env });
     const keys = warnings.map((warning) => warning.key);
     expect(keys).toContain("LOG_CONTEXT_KEYS");
+  });
+
+  it("parses context keys with semicolons", () => {
+    const env = { LOG_CONTEXT_KEYS: "requestId;tenantId" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.contextKeys).toEqual(["requestId", "tenantId"]);
   });
 
   it("parses redact field names list", () => {

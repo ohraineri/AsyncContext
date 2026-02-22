@@ -136,7 +136,7 @@ export function parseCsvEnv(value: string | undefined): string[] | undefined {
   const trimmed = value.trim();
   if (!trimmed) return [];
   return trimmed
-    .split(",")
+    .split(/[;,]/)
     .map((item) => item.trim())
     .filter(Boolean);
 }

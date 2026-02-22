@@ -245,6 +245,7 @@ Key variables:
 | `LOG_SAMPLE_RATE` | 0..1 or percent | `0.25` |
 
 You can also use `LOGGER_` aliases (for example `LOGGER_LEVEL`) for every `LOG_` variable.
+CSV list values accept commas or semicolons as separators.
 
 ## 9. Performance measurement
 
