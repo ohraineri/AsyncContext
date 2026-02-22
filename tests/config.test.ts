@@ -281,4 +281,10 @@ describe("config helpers", () => {
     expect(options.level).toBe("error");
     expect(options.format).toBe("json");
   });
+
+  it("accepts LOGLEVEL alias", () => {
+    const env = { LOGLEVEL: "warn" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.level).toBe("warn");
+  });
 });
