@@ -332,4 +332,16 @@ describe("config helpers", () => {
     const keys = warnings.map((warning) => warning.key);
     expect(keys).toContain("LOG_INCLUDE_PID");
   });
+
+  it("invokes onWarning callback", () => {
+    const warnings: string[] = [];
+    const env = { LOG_LEVEL: "loud" } as NodeJS.ProcessEnv;
+
+    createLoggerFromEnv({
+      env,
+      onWarning: (warning) => warnings.push(warning.key),
+    });
+
+    expect(warnings).toEqual(["LOG_LEVEL"]);
+  });
 });
