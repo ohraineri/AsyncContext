@@ -257,4 +257,13 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.name).toBe("service");
   });
+
+  it("merges defaults when env missing", () => {
+    const { options } = resolveLoggerEnv({
+      env: {},
+      defaults: { level: "debug", format: "pretty" },
+    });
+    expect(options.level).toBe("debug");
+    expect(options.format).toBe("pretty");
+  });
 });
