@@ -287,4 +287,10 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.level).toBe("warn");
   });
+
+  it("accepts LOG_COLOURS alias", () => {
+    const env = { LOG_COLOURS: "true" } as NodeJS.ProcessEnv;
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.colors).toBe(true);
+  });
 });
