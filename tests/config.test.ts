@@ -247,4 +247,14 @@ describe("config helpers", () => {
     const { options } = resolveLoggerEnv({ env });
     expect(options.name).toBe("api");
   });
+
+  it("uses LOGGER_NAME when LOG_NAME empty", () => {
+    const env = {
+      LOG_NAME: "",
+      LOGGER_NAME: "service",
+    } as NodeJS.ProcessEnv;
+
+    const { options } = resolveLoggerEnv({ env });
+    expect(options.name).toBe("service");
+  });
 });
